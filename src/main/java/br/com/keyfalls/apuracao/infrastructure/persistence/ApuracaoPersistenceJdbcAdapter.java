@@ -4,15 +4,12 @@ import br.com.keyfalls.apuracao.application.ApuracaoUseCases;
 import br.com.keyfalls.apuracao.application.ConsultaMatrizApuracaoPort;
 import br.com.keyfalls.apuracao.application.ControleAnulacaoProcessadaPort;
 import br.com.keyfalls.apuracao.domain.CalculadoraDeNota;
-import br.com.keyfalls.apuracao.domain.FichaDeResposta;
-import br.com.keyfalls.apuracao.domain.FichaDeRespostaRepository;
 import br.com.keyfalls.apuracao.domain.NotaProva;
 import br.com.keyfalls.apuracao.domain.Resultado;
 import br.com.keyfalls.apuracao.domain.ResultadoRepository;
 import br.com.keyfalls.shared.domain.Alternativa;
 import br.com.keyfalls.shared.domain.CargoId;
 import br.com.keyfalls.shared.domain.ConcursoId;
-import br.com.keyfalls.shared.domain.FichaDeRespostaId;
 import br.com.keyfalls.shared.domain.InscricaoId;
 import br.com.keyfalls.shared.domain.Peso;
 import br.com.keyfalls.shared.domain.PoliticaAnulacaoQuestao;
@@ -26,129 +23,28 @@ import org.springframework.stereotype.Repository;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Adaptador de persistencia PostgreSQL para os repositorios e portas ACL do contexto Apuracao.
+ * A persistencia de FichaDeResposta fica em {@link FichaDeRespostaPersistenceJdbcAdapter}.
  */
 @Repository
 public class ApuracaoPersistenceJdbcAdapter
-    implements FichaDeRespostaRepository, ResultadoRepository, ConsultaMatrizApuracaoPort, ControleAnulacaoProcessadaPort {
+    implements ResultadoRepository, ConsultaMatrizApuracaoPort, ControleAnulacaoProcessadaPort {
 
     private final JdbcTemplate jdbcTemplate;
 
     public ApuracaoPersistenceJdbcAdapter(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate);
     }
-
-    @Override
-    public void salvar(FichaDeResposta ficha) {
-        Objects.requireNonNull(ficha, "FichaDeResposta obrigatoria.");
-        jdbcTemplate.update(
-            """
-            INSERT INTO apuracao.fichas_de_resposta (id, inscricao_id, concurso_id, capturada_em)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT (inscricao_id) DO UPDATE SET
-                capturada_em = EXCLUDED.capturada_em
-            """,
-            ficha.id().valor(),
-            ficha.inscricaoId().valor(),
-            ficha.concursoId().valor(),
-            Timestamp.from(ficha.capturadaEm())
-        );
-
-        UUID idEfetivo = jdbcTemplate.queryForObject(
-            "SELECT id FROM apuracao.fichas_de_resposta WHERE inscricao_id = ?",
-            UUID.class,
-            ficha.inscricaoId().valor()
-        );
-
-        jdbcTemplate.update("DELETE FROM apuracao.respostas_marcadas WHERE ficha_id = ?", idEfetivo);
-
-        ficha.respostasPorProva().forEach((provaId, marcacoes) ->
-            marcacoes.forEach((questaoId, alternativa) ->
-                jdbcTemplate.update(
-                    """
-                    INSERT INTO apuracao.respostas_marcadas (ficha_id, prova_id, questao_id, alternativa_marcada)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    idEfetivo,
-                    provaId.valor(),
-                    questaoId.valor(),
-                    alternativa != null ? alternativa.name() : null
-                )
-            )
-        );
-    }
-
-    @Override
-    public Optional<FichaDeResposta> buscarPorId(FichaDeRespostaId id) {
-        return buscarFichaPorWhere("id = ?", id.valor());
-    }
-
-    @Override
-    public Optional<FichaDeResposta> buscarPorInscricao(InscricaoId inscricaoId) {
-        return buscarFichaPorWhere("inscricao_id = ?", inscricaoId.valor());
-    }
-
-    @Override
-    public List<FichaDeResposta> listarPorConcurso(ConcursoId concursoId) {
-        List<UUID> ids = jdbcTemplate.query(
-            "SELECT id FROM apuracao.fichas_de_resposta WHERE concurso_id = ?",
-            (rs, rowNum) -> rs.getObject("id", UUID.class),
-            concursoId.valor()
-        );
-        return ids.stream()
-            .map(id -> buscarPorId(new FichaDeRespostaId(id)).orElseThrow())
-            .toList();
-    }
-
-    private Optional<FichaDeResposta> buscarFichaPorWhere(String whereClause, UUID param) {
-        List<FichaRow> rows = jdbcTemplate.query(
-            "SELECT id, inscricao_id, concurso_id, capturada_em FROM apuracao.fichas_de_resposta WHERE " + whereClause,
-            (rs, rowNum) -> new FichaRow(
-                rs.getObject("id", UUID.class),
-                rs.getObject("inscricao_id", UUID.class),
-                rs.getObject("concurso_id", UUID.class),
-                rs.getTimestamp("capturada_em").toInstant()
-            ),
-            param
-        );
-        if (rows.isEmpty()) {
-            return Optional.empty();
-        }
-        FichaRow row = rows.getFirst();
-        Map<ProvaId, Map<QuestaoId, Alternativa>> respostasPorProva = new LinkedHashMap<>();
-
-        jdbcTemplate.query(
-            "SELECT prova_id, questao_id, alternativa_marcada FROM apuracao.respostas_marcadas WHERE ficha_id = ?",
-            rs -> {
-                ProvaId provaId = new ProvaId(rs.getObject("prova_id", UUID.class));
-                QuestaoId questaoId = new QuestaoId(rs.getObject("questao_id", UUID.class));
-                String altStr = rs.getString("alternativa_marcada");
-                Alternativa alt = (altStr != null && !altStr.isBlank()) ? Alternativa.valueOf(altStr) : null;
-                respostasPorProva
-                    .computeIfAbsent(provaId, k -> new LinkedHashMap<>())
-                    .put(questaoId, alt);
-            },
-            row.id()
-        );
-
-        return Optional.of(FichaDeResposta.capturar(
-            new FichaDeRespostaId(row.id()),
-            new InscricaoId(row.inscricaoId()),
-            new ConcursoId(row.concursoId()),
-            row.capturadaEm(),
-            respostasPorProva
-        ));
-    }
-
-    private record FichaRow(UUID id, UUID inscricaoId, UUID concursoId, Instant capturadaEm) {}
 
     @Override
     public void salvar(Resultado resultado) {
@@ -307,37 +203,61 @@ public class ApuracaoPersistenceJdbcAdapter
             String.class,
             concursoId.valor()
         );
-        PoliticaAnulacaoQuestao politica = PoliticaAnulacaoQuestao.valueOf(polStr);
+        PoliticaAnulacaoQuestao politica = converterPolitica(polStr);
 
-        List<CalculadoraDeNota.MatrizGabaritoProva> matrizes = jdbcTemplate.query(
+        List<ProvaRow> provas = jdbcTemplate.query(
             "SELECT id, peso FROM concurso.provas WHERE cargo_id = ?",
-            (rs, rowNum) -> {
-                ProvaId provaId = new ProvaId(rs.getObject("id", UUID.class));
-                Peso peso = new Peso(rs.getBigDecimal("peso"));
-                List<CalculadoraDeNota.ItemMatrizQuestao> itens = jdbcTemplate.query(
-                    """
-                    SELECT id, gabarito_oficial, anulada
-                      FROM concurso.questoes
-                     WHERE prova_id = ?
-                     ORDER BY numero_ordem ASC
-                    """,
-                    (rq, idx) -> {
-                        String gab = rq.getString("gabarito_oficial");
-                        return new CalculadoraDeNota.ItemMatrizQuestao(
-                            new QuestaoId(rq.getObject("id", UUID.class)),
-                            gab != null ? Alternativa.valueOf(gab) : Alternativa.A,
-                            rq.getBoolean("anulada")
-                        );
-                    },
-                    provaId.valor()
-                );
-                return new CalculadoraDeNota.MatrizGabaritoProva(provaId, peso, itens);
-            },
+            (rs, rowNum) -> new ProvaRow(
+                new ProvaId(rs.getObject("id", UUID.class)),
+                new Peso(rs.getBigDecimal("peso"))
+            ),
             cargoId.valor()
         );
 
+        List<CalculadoraDeNota.MatrizGabaritoProva> matrizes = new ArrayList<>();
+        for (ProvaRow prova : provas) {
+            Map<QuestaoId, Alternativa> gabaritoOficial = new LinkedHashMap<>();
+            Set<QuestaoId> questoesAnuladas = new HashSet<>();
+            jdbcTemplate.query(
+                """
+                SELECT id, resposta_gabarito, anulada
+                  FROM concurso.questoes
+                 WHERE prova_id = ?
+                 ORDER BY numero_ordem ASC
+                """,
+                rq -> {
+                    QuestaoId questaoId = new QuestaoId(rq.getObject("id", UUID.class));
+                    String gab = rq.getString("resposta_gabarito");
+                    gabaritoOficial.put(questaoId, gab != null ? Alternativa.valueOf(gab) : Alternativa.A);
+                    if (rq.getBoolean("anulada")) {
+                        questoesAnuladas.add(questaoId);
+                    }
+                },
+                prova.provaId().valor()
+            );
+            // Provas sem questoes cadastradas ainda nao sao apuraveis (MatrizGabaritoProva exige gabarito nao vazio).
+            if (!gabaritoOficial.isEmpty()) {
+                matrizes.add(new CalculadoraDeNota.MatrizGabaritoProva(
+                    prova.provaId(), prova.peso(), gabaritoOficial, questoesAnuladas
+                ));
+            }
+        }
+
         return new ContextoRecalculoCargo(cargoId, politica, matrizes);
     }
+
+    /**
+     * Converte o codigo persistido em concurso.concursos.politica_anulacao para a Strategy selada,
+     * espelhando a convencao usada em ConcursoRepositoryJpaAdapter.
+     */
+    private static PoliticaAnulacaoQuestao converterPolitica(String codigo) {
+        if ("REDISTRIBUICAO_PESO_STRATEGY".equals(codigo) || "DESCONSIDERAR_DO_TOTAL_DA_PROVA".equals(codigo)) {
+            return new PoliticaAnulacaoQuestao.RedistribuicaoPesoStrategy();
+        }
+        return new PoliticaAnulacaoQuestao.PontoUniversalStrategy();
+    }
+
+    private record ProvaRow(ProvaId provaId, Peso peso) {}
 
     @Override
     public Map<InscricaoId, MetadadosCandidatoInscricao> buscarMetadadosInscricoesDoConcurso(ConcursoId concursoId) {
@@ -347,7 +267,7 @@ public class ApuracaoPersistenceJdbcAdapter
             SELECT i.id AS inscricao_id, i.candidato_id, i.numero_inscricao, i.cargo_id,
                    COALESCE(c.nome_completo, 'Candidato') AS nome_completo
               FROM inscricao.inscricoes i
-              LEFT JOIN identidade.candidatos c ON c.id = i.candidato_id
+              LEFT JOIN identidade.usuarios c ON c.id = i.candidato_id
              WHERE i.concurso_id = ?
             """,
             rs -> {
@@ -375,7 +295,7 @@ public class ApuracaoPersistenceJdbcAdapter
             SELECT i.id AS inscricao_id, i.candidato_id, i.numero_inscricao, i.cargo_id,
                    COALESCE(c.nome_completo, 'Candidato') AS nome_completo
               FROM inscricao.inscricoes i
-              LEFT JOIN identidade.candidatos c ON c.id = i.candidato_id
+              LEFT JOIN identidade.usuarios c ON c.id = i.candidato_id
              WHERE i.candidato_id = ? AND i.concurso_id = ?
             """,
             (rs, rowNum) -> new MetadadosCandidatoInscricao(
@@ -401,7 +321,9 @@ public class ApuracaoPersistenceJdbcAdapter
               JOIN concurso.cargos cg ON cg.id = p.cargo_id
              WHERE cg.concurso_id = ?
             """,
-            rs -> mapa.put(new ProvaId(rs.getObject("id", UUID.class)), rs.getString("disciplina")),
+            rs -> {
+                mapa.put(new ProvaId(rs.getObject("id", UUID.class)), rs.getString("disciplina"));
+            },
             concursoId.valor()
         );
         return mapa;
@@ -420,13 +342,13 @@ public class ApuracaoPersistenceJdbcAdapter
 
         List<ApuracaoUseCases.ItemGabaritoVigenciaOutput> itens = jdbcTemplate.query(
             """
-            SELECT numero_ordem, id, gabarito_oficial, anulada
+            SELECT numero_ordem, id, resposta_gabarito, anulada
               FROM concurso.questoes
              WHERE prova_id = ?
              ORDER BY numero_ordem ASC
             """,
             (rs, rowNum) -> {
-                String gab = rs.getString("gabarito_oficial");
+                String gab = rs.getString("resposta_gabarito");
                 return new ApuracaoUseCases.ItemGabaritoVigenciaOutput(
                     rs.getInt("numero_ordem"),
                     rs.getObject("id", UUID.class),

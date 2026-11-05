@@ -1,6 +1,7 @@
 -- ============================================================================
--- V3: Tabelas de controle concorrente (@Version) para Logistica (Salas),
--- Recurso (Julgamento e Homologacao) e Idempotencia de Eventos
+-- V3: Tabelas de controle concorrente (@Version) para Logistica (Salas)
+-- e Recurso (Julgamento e Homologacao).
+-- A tabela de idempotencia shared.eventos_processados ja foi criada em V1.
 -- ============================================================================
 
 CREATE TABLE logistica.salas (
@@ -31,11 +32,4 @@ CREATE TABLE recurso.recursos (
     julgado_em          TIMESTAMPTZ,
     CONSTRAINT pk_recurso_recursos PRIMARY KEY (id),
     CONSTRAINT uq_recurso_questao_candidato UNIQUE (questao_id, candidato_id)
-);
-
-CREATE TABLE shared_events.eventos_processados (
-    event_id        UUID            NOT NULL,
-    consumidor      VARCHAR(100)    NOT NULL,
-    processado_em   TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    CONSTRAINT pk_eventos_processados PRIMARY KEY (event_id, consumidor)
 );

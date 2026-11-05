@@ -43,7 +43,7 @@ public class CsvFichaRespostaParserAdapter implements FichaRespostaParserPort, F
 
     @Override
     public boolean suportaFormato(FormatoArquivoOptico formato) {
-        return formato == FormatoArquivoOptico.CSV_DELIMITADO;
+        return formato == FormatoArquivoOptico.CSV_PONTO_E_VIRGULA;
     }
 
     @Override
@@ -80,7 +80,7 @@ public class CsvFichaRespostaParserAdapter implements FichaRespostaParserPort, F
                 fichasLidas.add(new FichaOpticaLida(numeroInscricao, provaId, Map.copyOf(marcacoes)));
             }
         } catch (IOException e) {
-            throw new RegraDeNegocioException("Erro de I/O ao processar stream de fichas opticas CSV.", e);
+            throw comCausa(new RegraDeNegocioException("Erro de I/O ao processar stream de fichas opticas CSV."), e);
         }
         return List.copyOf(fichasLidas);
     }
@@ -128,7 +128,7 @@ public class CsvFichaRespostaParserAdapter implements FichaRespostaParserPort, F
                 bufferChunk.clear();
             }
         } catch (IOException e) {
-            throw new RegraDeNegocioException("Falha de leitura no streaming do arquivo CSV de fichas.", e);
+            throw comCausa(new RegraDeNegocioException("Falha de leitura no streaming do arquivo CSV de fichas."), e);
         }
 
         return new RelatorioParsingLote(totalLinhasLidas, totalFichasValidas, List.copyOf(falhasIsoladas));
@@ -165,6 +165,14 @@ public class CsvFichaRespostaParserAdapter implements FichaRespostaParserPort, F
         }
 
         return new FichaCapturadaItem(numeroLinha, inscricaoId, provaId, Collections.unmodifiableMap(marcacoes));
+    }
+
+    /**
+     * Preserva a IOException original como causa sem alterar o construtor da excecao do Shared Kernel.
+     */
+    private static RegraDeNegocioException comCausa(RegraDeNegocioException excecao, Throwable causa) {
+        excecao.initCause(causa);
+        return excecao;
     }
 
     private MarcacaoOpticaCapturada converterTokenOptico(String tokenBruto, long numeroLinha) {

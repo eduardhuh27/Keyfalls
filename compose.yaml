@@ -45,6 +45,9 @@ services:
       DB_PASSWORD: keyfalls_secret
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "false"
       JWT_HMAC_SECRET: chave-secreta-local-desenvolvimento-hmac-sha256-minimo-32-bytes
 
 volumes:

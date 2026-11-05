@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KeyFalls API — Painel Interativo de Testes</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="p-4 md:p-6 min-h-screen">
+
+  <!-- TOP HEADER -->
+  <header class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
+          KF
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            KeyFalls API <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">Test Studio</span>
+          </h1>
+          <p class="text-xs text-slate-400">Plataforma de Gestão de Concursos Públicos — Monolito Modular DDD</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERVER & QUICK LINKS -->
+    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+      <div class="flex items-center gap-2 bg-slate-900 border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs">
+        <span class="text-slate-400 font-medium">Host:</span>
+        <input id="apiBaseUrl" type="text" value="http://localhost:8080" class="bg-transparent text-slate-200 outline-none w-44 font-mono font-medium focus:text-white" />
+        <button onclick="verificarHealth()" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition flex items-center gap-1.5 border border-slate-700">
+          <span id="healthIndicator" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <span id="healthText">Testar</span>
+        </button>
+      </div>
+
+      <a href="http://localhost:8080/swagger-ui.html" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white transition flex items-center gap-1.5">
+        <span>📖 Swagger</span>
+      </a>
+      <a href="http://localhost:8025" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/50 text-xs font-medium text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1.5">
+        <span>📬 Mailpit</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: CONTROLS & STEPPER (7 COLS) -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- SESSION & CONTEXT STATE CARD -->
+      <div class="bg-slate-800/70 border border-slate-700/70 rounded-xl p-4 shadow-sm backdrop-blur">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-white">Estado da Sessão & IDs Capturados</span>
+            <span class="text-[11px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Auto-encadeamento</span>
+          </div>
+          <button onclick="limparContexto()" class="text-xs text-slate-400 hover:text-red-400 transition">Limpar Estado</button>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Concurso ID</span>
+            <input id="ctxConcursoId" type="text" placeholder="Aguardando criação..." class="bg-transparent text-blue-400 font-mono w-full truncate text-[11px] outline-none" />
+          </div>
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Cargo ID</span>
+            <input id="ctxCargoId" type="text" placeholder="Aguardando cargo..." class="bg-transparent text-emerald-400 font-mono w-full truncate text-[11px] outline-none" />
+          </div>
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Prova ID</span>
+            <input id="ctxProvaId" type="text" placeholder="Aguardando prova..." class="bg-transparent text-amber-400 font-mono w-full truncate text-[11px] outline-none" />
+          </div>
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Inscrição ID</span>
+            <input id="ctxInscricaoId" type="text" placeholder="Aguardando inscrição..." class="bg-transparent text-purple-400 font-mono w-full truncate text-[11px] outline-none" />
+          </div>
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Local / Sala ID</span>
+            <input id="ctxSalaId" type="text" placeholder="Aguardando logística..." class="bg-transparent text-cyan-400 font-mono w-full truncate text-[11px] outline-none" />
+          </div>
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Recurso ID</span>
+            <input id="ctxRecursoId" type="text" placeholder="Aguardando recurso..." class="bg-transparent text-rose-400 font-mono w-full truncate text-[11px] outline-none" />
+          </div>
+        </div>
+
+        <div class="mt-3 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 flex-1 truncate">
+            <span class="text-slate-400 font-medium">JWT Token:</span>
+            <span id="jwtStatus" class="font-mono text-slate-300 truncate text-[11px]">Nenhum token carregado</span>
+          </div>
+          <button onclick="copiarToken()" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs transition ml-2">
+            Copiar JWT
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP NAVIGATION TABS -->
+      <div class="flex flex-wrap gap-1.5 border-b border-slate-800 pb-2">
+        <button onclick="selecionarPasso(1)" id="tab1" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition">
+          1. Identidade & Auth
+        </button>
+        <button onclick="selecionarPasso(2)" id="tab2" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+          2. Concurso & Provas
+        </button>
+        <button onclick="selecionarPasso(3)" id="tab3" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+          3. Inscrição & Boleto
+        </button>
+        <button onclick="selecionarPasso(4)" id="tab4" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+          4. Logística & Salas
+        </button>
+        <button onclick="selecionarPasso(5)" id="tab5" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+          5. Apuração & Notas
+        </button>
+        <button onclick="selecionarPasso(6)" id="tab6" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+          6. Recursos & Encerramento
+        </button>
+      </div>
+
+      <!-- STEP PANELS -->
+
+      <!-- STEP 1: AUTH -->
+      <div id="stepPanel1" class="step-panel space-y-4">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 inline-flex items-center justify-center text-xs font-bold">1A</span>
+              Cadastrar Candidato (Público)
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /auth/registrar</span>
+          </div>
+          <p class="text-xs text-slate-400">Cadastra um novo candidato com CPF válido e endereço para alocação geográfica.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('registrarCandidato')" class="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition shadow">
+              Preparar Requisição de Cadastro
+            </button>
+            <button onclick="executarAcaoDireta('registrarCandidato')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 inline-flex items-center justify-center text-xs font-bold">1B</span>
+              Autenticar / Login (Obter JWT)
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /auth/login</span>
+          </div>
+          <p class="text-xs text-slate-400">Gera o token Bearer JWT e salva automaticamente na sessão para as próximas chamadas.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('loginCandidato')" class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition shadow">
+              Preparar Login do Candidato
+            </button>
+            <button onclick="executarAcaoDireta('loginCandidato')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: CONCURSO -->
+      <div id="stepPanel2" class="step-panel hidden space-y-4">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center text-xs font-bold">2A</span>
+              Criar Edital do Concurso (Admin)
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /concursos</span>
+          </div>
+          <p class="text-xs text-slate-400">Cria o certame com período de inscrição e política de anulação de questões.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('criarConcurso')" class="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Criação de Concurso
+            </button>
+            <button onclick="executarAcaoDireta('criarConcurso')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center text-xs font-bold">2B</span>
+              Cadastrar Cargos e Provas com Pesos
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /concursos/{id}/cargos</span>
+          </div>
+          <p class="text-xs text-slate-400">Cadastra o cargo no concurso ativo e configura suas provas e pesos ponderados.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('cadastrarCargo')" class="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Cargo e Provas
+            </button>
+            <button onclick="executarAcaoDireta('cadastrarCargo')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center text-xs font-bold">2C</span>
+              Cadastrar Questões e Publicar Gabarito Oficial
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">PUT /provas/{id}/gabarito</span>
+          </div>
+          <p class="text-xs text-slate-400">Publica o gabarito oficial da prova (preliminar ou definitivo).</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('publicarGabarito')" class="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Gabarito Oficial
+            </button>
+            <button onclick="executarAcaoDireta('publicarGabarito')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: INSCRICAO -->
+      <div id="stepPanel3" class="step-panel hidden space-y-4">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 inline-flex items-center justify-center text-xs font-bold">3A</span>
+              Realizar Inscrição no Cargo
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /inscricoes</span>
+          </div>
+          <p class="text-xs text-slate-400">Inscreve o candidato autenticado no cargo desejado com geração do boleto FEBRABAN.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('realizarInscricao')" class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Inscrição
+            </button>
+            <button onclick="executarAcaoDireta('realizarInscricao')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 inline-flex items-center justify-center text-xs font-bold">3B</span>
+              Consultar Linha Digitável do Boleto
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">GET /inscricoes/{id}/boleto</span>
+          </div>
+          <p class="text-xs text-slate-400">Testa a proteção IDOR e obtém a linha digitável do boleto bancário.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('consultarBoleto')" class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-medium transition">
+              Consultar Boleto
+            </button>
+            <button onclick="executarAcaoDireta('consultarBoleto')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 inline-flex items-center justify-center text-xs font-bold">3C</span>
+              Pedir Isenção de Taxa
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /inscricoes/{id}/isencao</span>
+          </div>
+          <p class="text-xs text-slate-400">Solicita isenção de taxa comprovando inscrição no CadÚnico.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('pedirIsencao')" class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Pedido de Isenção
+            </button>
+            <button onclick="executarAcaoDireta('pedirIsencao')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: LOGISTICA -->
+      <div id="stepPanel4" class="step-panel hidden space-y-4">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 inline-flex items-center justify-center text-xs font-bold">4A</span>
+              Cadastrar Local e Salas de Prova
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /concursos/{id}/locais</span>
+          </div>
+          <p class="text-xs text-slate-400">Cadastra local com geolocalização e salas com capacidade máxima controlada por @Version.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('cadastrarLocal')" class="flex-1 px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Local e Salas
+            </button>
+            <button onclick="executarAcaoDireta('cadastrarLocal')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 inline-flex items-center justify-center text-xs font-bold">4B</span>
+              Alocar Candidatos por Proximidade Geográfica
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /concursos/{id}/alocacoes</span>
+          </div>
+          <p class="text-xs text-slate-400">Distribui candidatos nas salas priorizando menor distância Haversine.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('alocarCandidatos')" class="flex-1 px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Alocação Automática
+            </button>
+            <button onclick="executarAcaoDireta('alocarCandidatos')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 inline-flex items-center justify-center text-xs font-bold">4C</span>
+              Registrar Lista de Presença da Sala
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /salas/{id}/presencas</span>
+          </div>
+          <p class="text-xs text-slate-400">O fiscal registra os presentes e ausentes da sala de prova.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('registrarPresenca')" class="flex-1 px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Presenças
+            </button>
+            <button onclick="executarAcaoDireta('registrarPresenca')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5: APURACAO -->
+      <div id="stepPanel5" class="step-panel hidden space-y-4">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 inline-flex items-center justify-center text-xs font-bold">5A</span>
+              Calcular Notas e Classificação
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /concursos/{id}/apuracao</span>
+          </div>
+          <p class="text-xs text-slate-400">Processa as fichas de resposta, aplica cláusulas de barreira e gera o ranking dos candidatos.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('rodarApuracao')" class="flex-1 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Apuração
+            </button>
+            <button onclick="executarAcaoDireta('rodarApuracao')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 inline-flex items-center justify-center text-xs font-bold">5B</span>
+              Consultar Classificados & Meu Desempenho
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">GET /concursos/{id}/classificados</span>
+          </div>
+          <p class="text-xs text-slate-400">Retorna a lista pública de classificados ou o boletim individual do candidato.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('listarClassificados')" class="flex-1 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-medium transition">
+              Consultar Ranking Geral
+            </button>
+            <button onclick="carregarPreset('meuDesempenho')" class="flex-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              Meu Desempenho (JWT)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 6: RECURSO -->
+      <div id="stepPanel6" class="step-panel hidden space-y-4">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 inline-flex items-center justify-center text-xs font-bold">6A</span>
+              Interpor Recurso contra Questão (Candidato)
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /recursos</span>
+          </div>
+          <p class="text-xs text-slate-400">Protocola recurso fundamentado contestando uma questão da prova.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('interporRecurso')" class="flex-1 px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Recurso
+            </button>
+            <button onclick="executarAcaoDireta('interporRecurso')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 inline-flex items-center justify-center text-xs font-bold">6B</span>
+              Julgar Recurso & Anular Questão (Admin)
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">PUT /recursos/{id}/julgamento</span>
+          </div>
+          <p class="text-xs text-slate-400">Defere o recurso e emite o evento QuestaoAnulada, disparando o recálculo automático de notas!</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('julgarRecurso')" class="flex-1 px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Julgamento
+            </button>
+            <button onclick="executarAcaoDireta('julgarRecurso')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 inline-flex items-center justify-center text-xs font-bold">6C</span>
+              Homologar e Publicar Resultado Final (Trava 0 Pendências)
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">POST /concursos/{id}/resultado-final</span>
+          </div>
+          <p class="text-xs text-slate-400">Verifica se não há recursos pendentes (retorna 409 Conflict se houver) e encerra o certame.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('homologarResultadoFinal')" class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition">
+              Preparar Homologação Final
+            </button>
+            <button onclick="executarAcaoDireta('homologarResultadoFinal')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium transition">
+              ⚡ Executar Agora
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: REQUEST / RESPONSE CONSOLE (5 COLS) -->
+    <div class="lg:col-span-5 space-y-4">
+
+      <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-4 shadow-xl flex flex-col h-full">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Console de Requisição HTTP</span>
+          <div class="flex items-center gap-2">
+            <button onclick="copiarCurl()" class="text-xs text-blue-400 hover:text-blue-300 transition flex items-center gap-1 font-medium">
+              📋 Copiar cURL
+            </button>
+          </div>
+        </div>
+
+        <!-- URL & METHOD -->
+        <div class="flex gap-2 mb-3">
+          <select id="reqMethod" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-lg px-2.5 py-1.5 font-bold outline-none">
+            <option value="GET">GET</option>
+            <option value="POST" selected>POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+          <input id="reqUrl" type="text" value="/auth/registrar" class="bg-slate-900 border border-slate-700 text-slate-200 font-mono text-xs rounded-lg px-3 py-1.5 flex-1 outline-none focus:border-blue-500" />
+        </div>
+
+        <!-- PAYLOAD EDITOR -->
+        <div class="mb-3">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[11px] text-slate-400">Corpo da Requisição (JSON):</span>
+            <button onclick="formatarJson()" class="text-[10px] text-slate-400 hover:text-slate-300">Formatar</button>
+          </div>
+          <textarea id="reqBody" rows="7" class="w-full bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-xs p-3 rounded-lg outline-none focus:border-blue-500 custom-scroll resize-y"></textarea>
+        </div>
+
+        <!-- SEND BUTTON -->
+        <button id="btnEnviar" onclick="enviarRequisicao()" class="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs rounded-lg shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
+          <span id="btnEnviarIcon">🚀</span>
+          <span id="btnEnviarText">Enviar Requisição HTTP</span>
+        </button>
+
+        <!-- RESPONSE SECTION -->
+        <div class="mt-4 pt-4 border-t border-slate-700 flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-slate-300">Resposta do Servidor:</span>
+            <div id="respStatusBadge" class="text-xs px-2 py-0.5 rounded font-mono font-semibold bg-slate-900 text-slate-400 border border-slate-800">
+              Aguardando...
+            </div>
+          </div>
+          <pre id="respViewer" class="bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs p-3 rounded-lg overflow-x-auto flex-1 max-h-72 custom-scroll whitespace-pre-wrap">Envie uma requisição para inspecionar os headers e o corpo da resposta.</pre>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ESTADO GLOBAL DO CLIENTE
+    const state = {
+      jwtToken: '',
+      concursoId: '',
+      cargoId: '',
+      provaId: '',
+      inscricaoId: '',
+      salaId: '',
+      recursoId: ''
+    };
+
+    function atualizarInputsContexto() {
+      document.getElementById('ctxConcursoId').value = state.concursoId;
+      document.getElementById('ctxCargoId').value = state.cargoId;
+      document.getElementById('ctxProvaId').value = state.provaId;
+      document.getElementById('ctxInscricaoId').value = state.inscricaoId;
+      document.getElementById('ctxSalaId').value = state.salaId;
+      document.getElementById('ctxRecursoId').value = state.recursoId;
+
+      const jwtStatus = document.getElementById('jwtStatus');
+      if (state.jwtToken) {
+        jwtStatus.textContent = state.jwtToken.substring(0, 28) + '... (Ativo)';
+        jwtStatus.className = 'font-mono text-emerald-400 truncate text-[11px] font-semibold';
+      } else {
+        jwtStatus.textContent = 'Nenhum token carregado';
+        jwtStatus.className = 'font-mono text-slate-300 truncate text-[11px]';
+      }
+    }
+
+    function limparContexto() {
+      state.concursoId = '';
+      state.cargoId = '';
+      state.provaId = '';
+      state.inscricaoId = '';
+      state.salaId = '';
+      state.recursoId = '';
+      state.jwtToken = '';
+      atualizarInputsContexto();
+    }
+
+    function copiarToken() {
+      if (!state.jwtToken) {
+        alert('Nenhum token JWT disponível no momento.');
+        return;
+      }
+      navigator.clipboard.writeText(state.jwtToken);
+      alert('Token JWT copiado para a área de transferência!');
+    }
+
+    function selecionarPasso(passo) {
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        if (idx + 1 === passo) {
+          btn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition';
+        } else {
+          btn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition';
+        }
+      });
+      document.querySelectorAll('.step-panel').forEach((panel, idx) => {
+        if (idx + 1 === passo) {
+          panel.classList.remove('hidden');
+        } else {
+          panel.classList.add('hidden');
+        }
+      });
+    }
+
+    // PRESETS DE REQUISIÇÃO
+    const presets = {
+      registrarCandidato: () => ({
+        method: 'POST',
+        url: '/auth/registrar',
+        body: {
+          nomeCompleto: "Ana Carolina Silva",
+          cpf: "52998224725",
+          email: "ana.silva@email.com",
+          senha: "SenhaForte@2026",
+          logradouro: "Av. Paulista",
+          numero: "1000",
+          bairro: "Bela Vista",
+          cidade: "Sao Paulo",
+          uf: "SP",
+          cep: "01310100",
+          latitude: -23.5649,
+          longitude: -46.6520
+        }
+      }),
+      loginCandidato: () => ({
+        method: 'POST',
+        url: '/auth/login',
+        body: {
+          email: "ana.silva@email.com",
+          senha: "SenhaForte@2026"
+        }
+      }),
+      criarConcurso: () => ({
+        method: 'POST',
+        url: '/concursos',
+        body: {
+          codigoEdital: "EDITAL-01/" + new Date().getFullYear(),
+          titulo: "Concurso Publico Nacional Unificado 2026",
+          abrangencia: "NACIONAL",
+          periodoInscricaoInicio: new Date().toISOString(),
+          periodoInscricaoFim: new Date(Date.now() + 86400000 * 30).toISOString(),
+          periodoIsencaoInicio: new Date().toISOString(),
+          periodoIsencaoFim: new Date(Date.now() + 86400000 * 10).toISOString(),
+          politicaAnulacao: "PONTO_UNIVERSAL_STRATEGY"
+        }
+      }),
+      cadastrarCargo: () => {
+        const cId = state.concursoId || '00000000-0000-0000-0000-000000000001';
+        return {
+          method: 'POST',
+          url: `/concursos/${cId}/cargos`,
+          body: {
+            nome: "Auditor Fiscal de Controle",
+            vagas: 10,
+            taxaInscricao: 120.00,
+            provas: [
+              {
+                disciplina: "Direito Constitucional",
+                peso: 2.0,
+                totalQuestoes: 5
+              },
+              {
+                disciplina: "Tecnologia da Informacao",
+                peso: 3.0,
+                totalQuestoes: 5
+              }
+            ]
+          }
+        };
+      },
+      publicarGabarito: () => {
+        const pId = state.provaId || '00000000-0000-0000-0000-000000000002';
+        return {
+          method: 'PUT',
+          url: `/provas/${pId}/gabarito`,
+          body: {
+            definitivo: false,
+            respostas: {
+              "1": "A",
+              "2": "B",
+              "3": "C",
+              "4": "D",
+              "5": "E"
+            }
+          }
+        };
+      },
+      realizarInscricao: () => ({
+        method: 'POST',
+        url: '/inscricoes',
+        body: {
+          concursoId: state.concursoId || '00000000-0000-0000-0000-000000000001',
+          cargoId: state.cargoId || '00000000-0000-0000-0000-000000000002'
+        }
+      }),
+      consultarBoleto: () => {
+        const iId = state.inscricaoId || '00000000-0000-0000-0000-000000000003';
+        return {
+          method: 'GET',
+          url: `/inscricoes/${iId}/boleto`,
+          body: null
+        };
+      },
+      pedirIsencao: () => {
+        const iId = state.inscricaoId || '00000000-0000-0000-0000-000000000003';
+        return {
+          method: 'POST',
+          url: `/inscricoes/${iId}/isencao`,
+          body: {
+            justificativa: "Candidato inscrito no Cadastro Unico para Programas Sociais do Governo Federal (CadUnico)."
+          }
+        };
+      },
+      cadastrarLocal: () => {
+        const cId = state.concursoId || '00000000-0000-0000-0000-000000000001';
+        return {
+          method: 'POST',
+          url: `/concursos/${cId}/locais`,
+          body: {
+            nomeInstituicao: "Escola Estadual Central",
+            logradouro: "Rua das Flores",
+            numero: "500",
+            bairro: "Bela Vista",
+            cidade: "Sao Paulo",
+            uf: "SP",
+            cep: "01310100",
+            latitude: -23.5650,
+            longitude: -46.6525,
+            salas: [
+              {
+                identificacao: "Sala 101 - Bloco A",
+                capacidadeMaxima: 35,
+                cargoAtendidoId: state.cargoId || '00000000-0000-0000-0000-000000000002',
+                fiscalNome: "Carlos Souza",
+                fiscalCpf: "11144477735"
+              }
+            ]
+          }
+        };
+      },
+      alocarCandidatos: () => {
+        const cId = state.concursoId || '00000000-0000-0000-0000-000000000001';
+        return {
+          method: 'POST',
+          url: `/concursos/${cId}/alocacoes`,
+          body: {}
+        };
+      },
+      registrarPresenca: () => {
+        const sId = state.salaId || '00000000-0000-0000-0000-000000000004';
+        return {
+          method: 'POST',
+          url: `/salas/${sId}/presencas`,
+          body: {
+            itens: [
+              {
+                inscricaoId: state.inscricaoId || '00000000-0000-0000-0000-000000000003',
+                presente: true,
+                documentoApresentado: "RG SSP/SP 12.345.678-9"
+              }
+            ]
+          }
+        };
+      },
+      rodarApuracao: () => {
+        const cId = state.concursoId || '00000000-0000-0000-0000-000000000001';
+        return {
+          method: 'POST',
+          url: `/concursos/${cId}/apuracao`,
+          body: {}
+        };
+      },
+      listarClassificados: () => {
+        const cId = state.concursoId || '00000000-0000-0000-0000-000000000001';
+        return {
+          method: 'GET',
+          url: `/concursos/${cId}/classificados`,
+          body: null
+        };
+      },
+      meuDesempenho: () => {
+        const cId = state.concursoId || '00000000-0000-0000-0000-000000000001';
+        return {
+          method: 'GET',
+          url: `/candidatos/me/desempenho?concursoId=${cId}`,
+          body: null
+        };
+      },
+      interporRecurso: () => ({
+        method: 'POST',
+        url: '/recursos',
+        body: {
+          concursoId: state.concursoId || '00000000-0000-0000-0000-000000000001',
+          provaId: state.provaId || '00000000-0000-0000-0000-000000000002',
+          questaoId: '00000000-0000-0000-0000-000000000005',
+          fundamentacao: "A questao numero 3 possui duplicidade de alternativas corretas segundo a literatura e doutrina majoritaria."
+        }
+      }),
+      julgarRecurso: () => {
+        const rId = state.recursoId || '00000000-0000-0000-0000-000000000006';
+        return {
+          method: 'PUT',
+          url: `/recursos/${rId}/julgamento`,
+          body: {
+            deferido: true,
+            anularQuestao: true,
+            parecerBanca: "Recurso provido. Constatado erro material de digitacao no enunciado. Questao anulada com recalculacao de notas."
+          }
+        };
+      },
+      homologarResultadoFinal: () => {
+        const cId = state.concursoId || '00000000-0000-0000-0000-000000000001';
+        return {
+          method: 'POST',
+          url: `/concursos/${cId}/resultado-final`,
+          body: {}
+        };
+      }
+    };
+
+    function carregarPreset(chave) {
+      if (!presets[chave]) return;
+      const cfg = presets[chave]();
+      document.getElementById('reqMethod').value = cfg.method;
+      document.getElementById('reqUrl').value = cfg.url;
+      document.getElementById('reqBody').value = cfg.body ? JSON.stringify(cfg.body, null, 2) : '';
+    }
+
+    async function executarAcaoDireta(chave) {
+      carregarPreset(chave);
+      await enviarRequisicao();
+    }
+
+    function formatarJson() {
+      const area = document.getElementById('reqBody');
+      try {
+        if (!area.value.trim()) return;
+        area.value = JSON.stringify(JSON.parse(area.value), null, 2);
+      } catch (e) {
+        alert('JSON inválido.');
+      }
+    }
+
+    async function verificarHealth() {
+      const base = document.getElementById('apiBaseUrl').value.replace(/\/$/, '');
+      const ind = document.getElementById('healthIndicator');
+      const txt = document.getElementById('healthText');
+      txt.textContent = 'Checando...';
+      try {
+        const res = await fetch(`${base}/actuator/health`, { mode: 'cors' });
+        const json = await res.json();
+        if (json.status === 'UP') {
+          ind.className = 'w-2 h-2 rounded-full bg-emerald-500';
+          txt.textContent = 'Online (UP)';
+        } else {
+          ind.className = 'w-2 h-2 rounded-full bg-amber-500';
+          txt.textContent = json.status;
+        }
+      } catch (err) {
+        ind.className = 'w-2 h-2 rounded-full bg-rose-500';
+        txt.textContent = 'Offline';
+      }
+    }
+
+    async function enviarRequisicao() {
+      const base = document.getElementById('apiBaseUrl').value.replace(/\/$/, '');
+      const method = document.getElementById('reqMethod').value;
+      const path = document.getElementById('reqUrl').value;
+      const bodyRaw = document.getElementById('reqBody').value.trim();
+
+      const btn = document.getElementById('btnEnviar');
+      const btnIcon = document.getElementById('btnEnviarIcon');
+      const btnText = document.getElementById('btnEnviarText');
+      const badge = document.getElementById('respStatusBadge');
+      const viewer = document.getElementById('respViewer');
+
+      btn.disabled = true;
+      btnIcon.textContent = '⏳';
+      btnText.textContent = 'Enviando...';
+      badge.textContent = 'Carregando...';
+      badge.className = 'text-xs px-2 py-0.5 rounded font-mono font-semibold bg-slate-900 text-amber-400 border border-slate-800';
+
+      const headers = {};
+      if (['POST', 'PUT', 'PATCH'].includes(method)) {
+        headers['Content-Type'] = 'application/json';
+      }
+      if (state.jwtToken) {
+        headers['Authorization'] = `Bearer ${state.jwtToken}`;
+      }
+
+      const options = { method, headers };
+      if (['POST', 'PUT', 'PATCH'].includes(method) && bodyRaw) {
+        options.body = bodyRaw;
+      }
+
+      try {
+        const fullUrl = path.startsWith('http') ? path : `${base}${path}`;
+        const t0 = performance.now();
+        const response = await fetch(fullUrl, options);
+        const t1 = performance.now();
+        const elapsed = Math.round(t1 - t0);
+
+        let dataText = await response.text();
+        let parsedData = null;
+        try {
+          parsedData = JSON.parse(dataText);
+          dataText = JSON.stringify(parsedData, null, 2);
+        } catch (_) {}
+
+        // Atualiza Badge
+        const statusClass = response.ok
+          ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800'
+          : 'bg-rose-950/80 text-rose-400 border-rose-800';
+        badge.className = `text-xs px-2 py-0.5 rounded font-mono font-semibold border ${statusClass}`;
+        badge.textContent = `${response.status} ${response.statusText || ''} (${elapsed}ms)`;
+
+        viewer.textContent = dataText || '(Resposta sem corpo)';
+
+        // CAPTURA AUTOMÁTICA DE IDs E TOKENS NO RESPONSE
+        if (parsedData && typeof parsedData === 'object') {
+          if (parsedData.accessToken || parsedData.token) {
+            state.jwtToken = parsedData.accessToken || parsedData.token;
+          }
+          if (parsedData.id) {
+            if (path.includes('/concursos')) state.concursoId = parsedData.id;
+            else if (path.includes('/cargos')) state.cargoId = parsedData.id;
+            else if (path.includes('/inscricoes')) state.inscricaoId = parsedData.id;
+            else if (path.includes('/locais') || path.includes('/salas')) state.salaId = parsedData.id;
+            else if (path.includes('/recursos')) state.recursoId = parsedData.id;
+          }
+          if (parsedData.concursoId) state.concursoId = parsedData.concursoId;
+          if (parsedData.cargoId) state.cargoId = parsedData.cargoId;
+          if (parsedData.provaId) state.provaId = parsedData.provaId;
+          if (parsedData.inscricaoId) state.inscricaoId = parsedData.inscricaoId;
+          atualizarInputsContexto();
+        }
+
+      } catch (err) {
+        badge.className = 'text-xs px-2 py-0.5 rounded font-mono font-semibold border bg-rose-950/80 text-rose-400 border-rose-800';
+        badge.textContent = 'Erro de Conexão';
+        viewer.textContent = `Falha ao alcançar a API (${base}):\n${err.message}\n\nCertifique-se de que a API está rodando via Docker ou Maven:\n  docker compose up -d\nou\n  mvn spring-boot:run`;
+      } finally {
+        btn.disabled = false;
+        btnIcon.textContent = '🚀';
+        btnText.textContent = 'Enviar Requisição HTTP';
+      }
+    }
+
+    function copiarCurl() {
+      const base = document.getElementById('apiBaseUrl').value.replace(/\/$/, '');
+      const method = document.getElementById('reqMethod').value;
+      const path = document.getElementById('reqUrl').value;
+      const bodyRaw = document.getElementById('reqBody').value.trim();
+      const fullUrl = path.startsWith('http') ? path : `${base}${path}`;
+
+      let cmd = `curl -X ${method} "${fullUrl}"`;
+      if (['POST', 'PUT', 'PATCH'].includes(method)) {
+        cmd += ` -H "Content-Type: application/json"`;
+      }
+      if (state.jwtToken) {
+        cmd += ` -H "Authorization: Bearer ${state.jwtToken}"`;
+      }
+      if (['POST', 'PUT', 'PATCH'].includes(method) && bodyRaw) {
+        const escaped = bodyRaw.replace(/"/g, '\\"');
+        cmd += ` -d "${escaped}"`;
+      }
+
+      navigator.clipboard.writeText(cmd);
+      alert('Comando cURL copiado para a área de transferência!');
+    }
+
+    // Inicialização
+    verificarHealth();
+    carregarPreset('registrarCandidato');
+  </script>
+
+</body>
+</html>

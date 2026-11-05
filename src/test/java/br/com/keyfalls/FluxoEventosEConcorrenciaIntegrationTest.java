@@ -18,7 +18,7 @@ import br.com.keyfalls.comunicacao.domain.EnviadorEmailPort;
 import br.com.keyfalls.concurso.domain.event.QuestaoAnulada;
 import br.com.keyfalls.inscricao.domain.event.IsencaoJulgada;
 import br.com.keyfalls.inscricao.infrastructure.persistence.InscricaoJpaEntity;
-import br.com.keyfalls.inscricao.infrastructure.persistence.InscricaoSpringDataRepository;
+import br.com.keyfalls.inscricao.infrastructure.persistence.SpringDataInscricaoRepository;
 import br.com.keyfalls.logistica.infrastructure.persistence.SalaJpaEntity;
 import br.com.keyfalls.logistica.infrastructure.persistence.SalaSpringDataRepository;
 import br.com.keyfalls.recurso.infrastructure.persistence.RecursoJpaEntity;
@@ -95,7 +95,7 @@ class FluxoEventosEConcorrenciaIntegrationTest extends AbstractIntegrationTest {
     private RecursoSpringDataRepository recursoRepository;
 
     @Autowired
-    private InscricaoSpringDataRepository inscricaoRepository;
+    private SpringDataInscricaoRepository inscricaoRepository;
 
     @Autowired
     private PlatformTransactionManager transactionManager;

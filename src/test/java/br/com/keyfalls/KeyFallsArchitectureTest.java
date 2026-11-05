@@ -3,6 +3,7 @@ package br.com.keyfalls;
 import br.com.keyfalls.shared.domain.AggregateRoot;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -132,7 +133,7 @@ class KeyFallsArchitectureTest {
             .that().areDeclaredInClassesThat().areAnnotatedWith(RestController.class)
             .and().arePublic()
             .should().notHaveRawReturnType(assignableTo(AggregateRoot.class))
-            .andShould().notHaveRawReturnType(JavaClass.Predicates.annotatedWith(Entity.class))
+            .andShould().notHaveRawReturnType(CanBeAnnotated.Predicates.annotatedWith(Entity.class))
             .allowEmptyShould(true)
             .because("Endpoints REST devem retornar exclusivamente DTOs de Response ou ResponseEntity<DTO>.");
 

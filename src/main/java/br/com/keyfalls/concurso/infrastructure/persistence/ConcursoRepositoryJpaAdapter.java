@@ -120,12 +120,12 @@ public class ConcursoRepositoryJpaAdapter implements ConcursoRepository {
                     """
                     INSERT INTO concurso.questoes (
                         id, prova_id, numero_ordem, enunciado, alternativas_json,
-                        resposta_oficial, anulada, motivo_anulacao
+                        resposta_gabarito, anulada, justificativa_anulacao
                     ) VALUES (?, ?, ?, ?, ?::jsonb, ?, ?, ?)
                     ON CONFLICT (id) DO UPDATE SET
-                        resposta_oficial = EXCLUDED.resposta_oficial,
+                        resposta_gabarito = EXCLUDED.resposta_gabarito,
                         anulada = EXCLUDED.anulada,
-                        motivo_anulacao = EXCLUDED.motivo_anulacao
+                        justificativa_anulacao = EXCLUDED.justificativa_anulacao
                     """,
                     questao.id().valor(),
                     prova.id().valor(),
@@ -221,7 +221,7 @@ public class ConcursoRepositoryJpaAdapter implements ConcursoRepository {
                 Map<QuestaoId, Alternativa> gabaritoCarregado = new LinkedHashMap<>();
                 jdbcTemplate.query(
                     """
-                    SELECT id, numero_ordem, enunciado, resposta_oficial, anulada, motivo_anulacao
+                    SELECT id, numero_ordem, enunciado, resposta_gabarito, anulada, justificativa_anulacao
                     FROM concurso.questoes WHERE prova_id = ? ORDER BY numero_ordem ASC
                     """,
                     qRs -> {
@@ -233,14 +233,14 @@ public class ConcursoRepositoryJpaAdapter implements ConcursoRepository {
                         concurso.incluirQuestaoNaProva(
                             pId, qId, qRs.getInt("numero_ordem"), qRs.getString("enunciado"), opcoesPadrao
                         );
-                        String resp = qRs.getString("resposta_oficial");
+                        String resp = qRs.getString("resposta_gabarito");
                         if (resp != null && !resp.isBlank()) {
                             gabaritoCarregado.put(qId, Alternativa.valueOf(resp.trim()));
                         }
                         if (qRs.getBoolean("anulada")) {
                             concurso.anularQuestao(
                                 pId, qId,
-                                Objects.requireNonNullElse(qRs.getString("motivo_anulacao"), "Anulada por recurso"),
+                                Objects.requireNonNullElse(qRs.getString("justificativa_anulacao"), "Anulada por recurso"),
                                 Instant.now()
                             );
                         }

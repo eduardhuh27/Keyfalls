@@ -24,7 +24,7 @@ public class EventoProcessadoJdbcAdapter implements EventoProcessadoRepository {
     @Override
     public boolean jaFoiProcessado(UUID eventId, String nomeConsumidor) {
         Integer count = jdbcTemplate.queryForObject(
-            "SELECT COUNT(1) FROM shared_events.eventos_processados WHERE event_id = ? AND consumidor = ?",
+            "SELECT COUNT(1) FROM shared.eventos_processados WHERE event_id = ? AND nome_consumidor = ?",
             Integer.class,
             eventId,
             nomeConsumidor
@@ -36,9 +36,9 @@ public class EventoProcessadoJdbcAdapter implements EventoProcessadoRepository {
     public void registrarProcessamento(UUID eventId, String nomeConsumidor, Instant processadoEm) {
         jdbcTemplate.update(
             """
-            INSERT INTO shared_events.eventos_processados (event_id, consumidor, processado_em)
+            INSERT INTO shared.eventos_processados (event_id, nome_consumidor, processado_em)
             VALUES (?, ?, ?)
-            ON CONFLICT (event_id, consumidor) DO NOTHING
+            ON CONFLICT (event_id, nome_consumidor) DO NOTHING
             """,
             eventId,
             nomeConsumidor,

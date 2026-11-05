@@ -30,7 +30,7 @@ public class ConsultaDestinatarioJdbcAdapter implements ConsultaDestinatarioPort
     @Override
     public DadosContatoCandidato buscarPorCandidatoId(CandidatoId candidatoId) {
         List<DadosContatoCandidato> lista = jdbcTemplate.query(
-            "SELECT nome_completo, email FROM identidade.candidatos WHERE id = ?",
+            "SELECT nome_completo, email FROM identidade.usuarios WHERE id = ?",
             (rs, rowNum) -> new DadosContatoCandidato(
                 rs.getString("nome_completo"),
                 new Email(rs.getString("email"))
@@ -50,7 +50,7 @@ public class ConsultaDestinatarioJdbcAdapter implements ConsultaDestinatarioPort
             """
             SELECT c.nome_completo, c.email
               FROM inscricao.inscricoes i
-              JOIN identidade.candidatos c ON c.id = i.candidato_id
+              JOIN identidade.usuarios c ON c.id = i.candidato_id
              WHERE i.id = ?
             """,
             (rs, rowNum) -> new DadosContatoCandidato(
@@ -95,10 +95,10 @@ public class ConsultaDestinatarioJdbcAdapter implements ConsultaDestinatarioPort
             """
             SELECT c.nome_completo, c.email
               FROM inscricao.inscricoes i
-              JOIN identidade.candidatos c ON c.id = i.candidato_id
+              JOIN identidade.usuarios c ON c.id = i.candidato_id
              WHERE i.concurso_id = ?
                AND i.cargo_id = ?
-               AND i.status IN ('PAGA', 'ISENTA')
+               AND i.status IN ('HOMOLOGADA', 'PAGA', 'ISENTA')
             """,
             (rs, rowNum) -> new DadosContatoCandidato(
                 rs.getString("nome_completo"),

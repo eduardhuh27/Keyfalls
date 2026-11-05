@@ -40,22 +40,20 @@ public class RecursoRepositoryJpaAdapter implements RecursoRepository, Homologac
     @Override
     public void salvar(Recurso recurso) {
         Objects.requireNonNull(recurso, "Recurso obrigatorio.");
-        Integer versaoAtual = jdbcTemplate.query(
-            "SELECT version FROM recurso.recursos WHERE id = ?",
-            rs -> rs.next() ? rs.getInt("version") : null,
+        Long versaoAtual = jdbcTemplate.query(
+            "SELECT versao FROM recurso.recursos WHERE id = ?",
+            rs -> rs.next() ? rs.getLong("versao") : null,
             recurso.id().valor()
         );
-
-        String statusBanco = recurso.foiJulgado() ? recurso.decisao().name() : "AGUARDANDO_JULGAMENTO";
 
         if (versaoAtual == null) {
             jdbcTemplate.update(
                 """
                 INSERT INTO recurso.recursos (
                     id, concurso_id, prova_id, questao_id, candidato_id,
-                    fundamentacao, hash_agrupamento_argumentacao, status,
-                    decisao, parecer_banca, protocolado_em, julgado_em, version
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                    fundamentacao, hash_agrupamento,
+                    decisao, parecer_banca, protocolado_em, julgado_em, versao
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 """,
                 recurso.id().valor(),
                 recurso.concursoId().valor(),
@@ -64,7 +62,6 @@ public class RecursoRepositoryJpaAdapter implements RecursoRepository, Homologac
                 recurso.candidatoId().valor(),
                 recurso.fundamentacao(),
                 recurso.hashAgrupamentoArgumentacao(),
-                statusBanco,
                 recurso.decisao() != null ? recurso.decisao().name() : null,
                 recurso.parecerBanca(),
                 Timestamp.from(recurso.protocoladoEm()),
@@ -74,14 +71,12 @@ public class RecursoRepositoryJpaAdapter implements RecursoRepository, Homologac
             int updated = jdbcTemplate.update(
                 """
                 UPDATE recurso.recursos
-                   SET status = ?,
-                       decisao = ?,
+                   SET decisao = ?,
                        parecer_banca = ?,
                        julgado_em = ?,
-                       version = version + 1
-                 WHERE id = ? AND version = ?
+                       versao = versao + 1
+                 WHERE id = ? AND versao = ?
                 """,
-                statusBanco,
                 recurso.decisao() != null ? recurso.decisao().name() : null,
                 recurso.parecerBanca(),
                 recurso.julgadoEm() != null ? Timestamp.from(recurso.julgadoEm()) : null,
@@ -115,7 +110,7 @@ public class RecursoRepositoryJpaAdapter implements RecursoRepository, Homologac
     @Override
     public long contarPendentesPorConcurso(ConcursoId concursoId) {
         Long count = jdbcTemplate.queryForObject(
-            "SELECT COUNT(1) FROM recurso.recursos WHERE concurso_id = ? AND status = 'AGUARDANDO_JULGAMENTO'",
+            "SELECT COUNT(1) FROM recurso.recursos WHERE concurso_id = ? AND decisao IS NULL",
             Long.class,
             concursoId.valor()
         );
@@ -183,7 +178,7 @@ public class RecursoRepositoryJpaAdapter implements RecursoRepository, Homologac
             UPDATE concurso.concursos
                SET status = 'ENCERRADO_HOMOLOGADO',
                    homologado_em = ?,
-                   version = version + 1
+                   versao = versao + 1
              WHERE id = ?
             """,
             Timestamp.from(homologadoEm),

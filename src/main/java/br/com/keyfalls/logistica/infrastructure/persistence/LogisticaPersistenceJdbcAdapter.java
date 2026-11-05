@@ -52,11 +52,11 @@ public class LogisticaPersistenceJdbcAdapter
         jdbcTemplate.update(
             """
             INSERT INTO logistica.locais_de_prova (
-                id, concurso_id, nome_instituicao, logradouro, numero, bairro, cidade, uf, cep, latitude, longitude, version
+                id, concurso_id, nome_instituicao, logradouro, numero, bairro, cidade, uf, cep, latitude, longitude, versao
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
             ON CONFLICT (id) DO UPDATE SET
                 nome_instituicao = EXCLUDED.nome_instituicao,
-                version = logistica.locais_de_prova.version + 1
+                versao = logistica.locais_de_prova.versao + 1
             """,
             local.id().valor(),
             local.concursoId().valor(),
@@ -73,8 +73,8 @@ public class LogisticaPersistenceJdbcAdapter
 
         for (Sala sala : local.salas()) {
             Integer versaoAtual = jdbcTemplate.query(
-                "SELECT version FROM logistica.salas WHERE id = ?",
-                rs -> rs.next() ? rs.getInt("version") : null,
+                "SELECT versao FROM logistica.salas WHERE id = ?",
+                rs -> rs.next() ? rs.getInt("versao") : null,
                 sala.id().valor()
             );
 
@@ -82,8 +82,8 @@ public class LogisticaPersistenceJdbcAdapter
                 jdbcTemplate.update(
                     """
                     INSERT INTO logistica.salas (
-                        id, local_de_prova_id, identificacao, capacidade_maxima, Quantidade_alocada,
-                        cargo_atendido_id, fiscal_nome, fiscal_cpf, version
+                        id, local_de_prova_id, identificacao, capacidade_maxima, vagas_ocupadas,
+                        cargo_atendido_id, nome_fiscal, cpf_fiscal, versao
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
                     """,
                     sala.id().valor(),
@@ -93,21 +93,21 @@ public class LogisticaPersistenceJdbcAdapter
                     sala.inscricoesAlocadas().size(),
                     sala.cargoAtendido().valor(),
                     sala.fiscal().nomeCompleto(),
-                    sala.fiscal().cpf().valor()
+                    sala.fiscal().cpf().numero()
                 );
             } else {
                 int updated = jdbcTemplate.update(
                     """
                     UPDATE logistica.salas
-                       SET quantidade_alocada = ?,
-                           fiscal_nome = ?,
-                           fiscal_cpf = ?,
-                           version = version + 1
-                     WHERE id = ? AND version = ?
+                       SET vagas_ocupadas = ?,
+                           nome_fiscal = ?,
+                           cpf_fiscal = ?,
+                           versao = versao + 1
+                     WHERE id = ? AND versao = ?
                     """,
                     sala.inscricoesAlocadas().size(),
                     sala.fiscal().nomeCompleto(),
-                    sala.fiscal().cpf().valor(),
+                    sala.fiscal().cpf().numero(),
                     sala.id().valor(),
                     versaoAtual
                 );
@@ -171,7 +171,7 @@ public class LogisticaPersistenceJdbcAdapter
     private void carregarSalasDoLocal(LocalDeProva local) {
         jdbcTemplate.query(
             """
-            SELECT id, identificacao, capacidade_maxima, cargo_atendido_id, fiscal_nome, fiscal_cpf
+            SELECT id, identificacao, capacidade_maxima, cargo_atendido_id, nome_fiscal, cpf_fiscal
               FROM logistica.salas
              WHERE local_de_prova_id = ?
              ORDER BY identificacao
@@ -184,7 +184,7 @@ public class LogisticaPersistenceJdbcAdapter
                     rs.getString("identificacao"),
                     rs.getInt("capacidade_maxima"),
                     cargoId,
-                    new Fiscal(rs.getString("fiscal_nome"), new CPF(rs.getString("fiscal_cpf")))
+                    new Fiscal(rs.getString("nome_fiscal"), new CPF(rs.getString("cpf_fiscal")))
                 );
 
                 List<UUID> alocadas = jdbcTemplate.query(
@@ -207,13 +207,13 @@ public class LogisticaPersistenceJdbcAdapter
             """
             INSERT INTO logistica.alocacoes_de_sala (
                 id, inscricao_id, cargo_id, local_de_prova_id, sala_id,
-                presente, hash_assinatura_candidato, documento_apresentado, presenca_registrada_em, alocado_em
+                presente, hash_assinatura, documento_apresentado, registrado_em, alocado_em
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (inscricao_id) DO UPDATE SET
                 presente = EXCLUDED.presente,
-                hash_assinatura_candidato = EXCLUDED.hash_assinatura_candidato,
+                hash_assinatura = EXCLUDED.hash_assinatura,
                 documento_apresentado = EXCLUDED.documento_apresentado,
-                presenca_registrada_em = EXCLUDED.presenca_registrada_em
+                registrado_em = EXCLUDED.registrado_em
             """,
             alocacao.id().valor(),
             alocacao.inscricaoId().valor(),
@@ -249,7 +249,7 @@ public class LogisticaPersistenceJdbcAdapter
         List<AlocacaoDeSala> resultado = jdbcTemplate.query(
             """
             SELECT id, inscricao_id, cargo_id, local_de_prova_id, sala_id,
-                   presente, hash_assinatura_candidato, documento_apresentado, presenca_registrada_em
+                   presente, hash_assinatura, documento_apresentado, registrado_em
               FROM logistica.alocacoes_de_sala
              WHERE %s
             """.formatted(whereClause),
@@ -257,11 +257,11 @@ public class LogisticaPersistenceJdbcAdapter
                 Boolean presente = rs.getObject("presente", Boolean.class);
                 ListaDePresenca presenca = null;
                 if (presente != null) {
-                    Timestamp ts = rs.getTimestamp("presenca_registrada_em");
+                    Timestamp ts = rs.getTimestamp("registrado_em");
                     Instant regEm = ts != null ? ts.toInstant() : Instant.now();
                     presenca = presente
                         ? ListaDePresenca.assinada(
-                            rs.getString("hash_assinatura_candidato"),
+                            rs.getString("hash_assinatura"),
                             rs.getString("documento_apresentado"),
                             regEm
                         )
@@ -288,12 +288,12 @@ public class LogisticaPersistenceJdbcAdapter
             SELECT i.id AS inscricao_id, i.cargo_id,
                    c.logradouro, c.numero, c.bairro, c.cidade, c.uf, c.cep, c.latitude, c.longitude
               FROM inscricao.inscricoes i
-              JOIN identidade.candidatos c ON c.id = i.candidato_id
+              JOIN identidade.usuarios c ON c.id = i.candidato_id
               LEFT JOIN logistica.alocacoes_de_sala a ON a.inscricao_id = i.id
              WHERE i.concurso_id = ?
-               AND i.status IN ('PAGA', 'ISENTA')
+               AND i.status IN ('HOMOLOGADA', 'PAGA', 'ISENTA')
                AND a.id IS NULL
-             ORDER BY i.criada_em ASC
+             ORDER BY i.numero_inscricao ASC
             """,
             (rs, rowNum) -> {
                 Endereco endereco = new Endereco(
