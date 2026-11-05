@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 /**
- * Etapa 5 (Fase 2 - v2): Ordena locais pela menor distancia esferica real em quilometros
+ * Ordena locais pela menor distancia esferica real em quilometros
  * (formula de Haversine sobre latitude/longitude), mantendo fallback seguro por bairro/CEP
  * caso algum cadastro legado nao possua coordenadas geocodificadas.
  */

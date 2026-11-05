@@ -197,7 +197,7 @@ public final class Concurso extends AggregateRoot<ConcursoId> {
     }
 
     /**
-     * Etapa 9 — Trava definitiva de imutabilidade do certame apos julgamento integral dos recursos.
+     * Trava definitiva de imutabilidade do certame apos julgamento integral dos recursos.
      */
     public void encerrarEHomologarResultadoFinal(boolean possuiRecursosPendentes) {
         exigirConcursoNaoHomologado();

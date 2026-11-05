@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Handler de aplicacao do Fluxo 2 (Recalculo por Anulacao de Questao):
+ * Handler de aplicacao para recalculo por anulacao de questao:
  * Consome QuestaoAnulada com dupla camada de idempotencia (tecnica por eventId +
  * semantica por provaId/questaoId), recalcula as notas via CalculadoraDeNota,
  * reclassifica via ClassificadorDeCandidatos e publica ResultadoRepublicado.

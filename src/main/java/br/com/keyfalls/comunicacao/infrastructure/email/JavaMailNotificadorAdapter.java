@@ -1,6 +1,6 @@
 package br.com.keyfalls.comunicacao.infrastructure.email;
 
-import br.com.keyfalls.comunicacao.application.NotificadorEmailPort;
+import br.com.keyfalls.comunicacao.domain.EnviadorEmailPort;
 import br.com.keyfalls.comunicacao.domain.MensagemTransacional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +18,10 @@ import java.util.UUID;
 
 /**
  * Adaptador Tecnico de Notificacao Transacional por E-mail (Secondary Adapter).
- * Implementa NotificadorEmailPort (e EnviadorEmailPort), despacha mensagens via JavaMailSender
- * quando configurado e persiste trilha de auditoria em comunicacao.historico_notificacoes.
+ * Despacha mensagens via JavaMailSender e persiste trilha de auditoria em comunicacao.historico_notificacoes.
  */
 @Component
-public class JavaMailNotificadorAdapter implements NotificadorEmailPort {
+public class JavaMailNotificadorAdapter implements EnviadorEmailPort {
 
     private static final Logger log = LoggerFactory.getLogger(JavaMailNotificadorAdapter.class);
 

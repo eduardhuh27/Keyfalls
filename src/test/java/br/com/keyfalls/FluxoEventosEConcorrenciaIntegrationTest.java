@@ -101,12 +101,8 @@ class FluxoEventosEConcorrenciaIntegrationTest extends AbstractIntegrationTest {
     private PlatformTransactionManager transactionManager;
 
     private final CsvFichaParser csvFichaParser = new CsvFichaParser();
-
-    // =========================================================================
-    // 1. COREOGRAFIA DE EVENTOS & DUPLA IDEMPOTENCIA (QuestaoAnulada -> Apuracao)
-    // =========================================================================
-
-    @Test
+// 1. COREOGRAFIA DE EVENTOS & DUPLA IDEMPOTENCIA (QuestaoAnulada -> Apuracao)
+@Test
     @DisplayName("Disparo duplicado de QuestaoAnulada (mesmo eventId ou novo eventId para mesma questao) NAO recalcula duas vezes e publica ResultadoRepublicado apos salvar lote")
     void deveGarantirIdempotenciaDuplaEOrdemEstritaNoRecalculoPorQuestaoAnulada() {
         // Portas de saida mockadas (objetos de dominio CalculadoraDeNota e Classificador sao 100% REAIS!)
@@ -197,12 +193,8 @@ class FluxoEventosEConcorrenciaIntegrationTest extends AbstractIntegrationTest {
             lista -> lista.size() == 1 && lista.get(0).notaTotalPonderada().compareTo(new BigDecimal("100.00")) == 0
         ));
     }
-
-    // =========================================================================
-    // 2. ISOLAMENTO TRANSACIONAL CONTRA QUEDA DE SMTP (IsencaoJulgada -> Comunicacao)
-    // =========================================================================
-
-    @Test
+// 2. ISOLAMENTO TRANSACIONAL CONTRA QUEDA DE SMTP (IsencaoJulgada -> Comunicacao)
+@Test
     @DisplayName("Falha no servidor SMTP (MailSendException) ao processar IsencaoJulgada NAO faz rollback na homologacao da Inscricao ja salva no PostgreSQL")
     void falhaNoServidorSmtpNaoDeveReverterJulgamentoDeIsencaoSalvoNoBanco() {
         UUID inscricaoId = UUID.randomUUID();
@@ -268,12 +260,8 @@ class FluxoEventosEConcorrenciaIntegrationTest extends AbstractIntegrationTest {
         assertThat(persistidaNoBanco.getStatus()).isEqualTo("HOMOLOGADA");
         assertThat(persistidaNoBanco.getIsencaoSituacao()).isEqualTo("DEFERIDA");
     }
-
-    // =========================================================================
-    // 3. RACE CONDITIONS REAIS NO POSTGRESQL (@Version OPTIMISTIC LOCKING + UNIQUE INDEX)
-    // =========================================================================
-
-    @Test
+// 3. RACE CONDITIONS REAIS NO POSTGRESQL (@Version OPTIMISTIC LOCKING + UNIQUE INDEX)
+@Test
     @DisplayName("Race Condition em Sala: 2 threads disputando simultaneamente a ultima vaga (capacidade=1) — apenas 1 vence e a outra falha com OptimisticLock")
     void deveImpedirOverbookingNaUltimaVagaDaSalaSobConcorrenciaSimultanea() throws Exception {
         UUID salaId = UUID.randomUUID();
@@ -406,12 +394,8 @@ class FluxoEventosEConcorrenciaIntegrationTest extends AbstractIntegrationTest {
             ))
         )).isInstanceOf(DataIntegrityViolationException.class);
     }
-
-    // =========================================================================
-    // 4. TRAVA DO RESULTADO FINAL COM RECURSO PENDENTE & PARSER OPTICO CORROMPIDO
-    // =========================================================================
-
-    @Test
+// 4. TRAVA DO RESULTADO FINAL COM RECURSO PENDENTE & PARSER OPTICO CORROMPIDO
+@Test
     @DisplayName("Trava do Resultado Final: deve bloquear homologacao enquanto existir ao menos 1 recurso com decisao NULL (pendente)")
     void deveBloquearHomologacaoResultadoFinalEnquantoHouverRecursoPendenteNoBanco() {
         UUID concursoId = UUID.randomUUID();

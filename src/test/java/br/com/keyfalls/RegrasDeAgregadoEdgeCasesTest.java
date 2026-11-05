@@ -49,12 +49,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class RegrasDeAgregadoEdgeCasesTest {
 
     private static final CPF CPF_VALIDO_FISCAL = new CPF("52998224725");
-
-    // =========================================================================
-    // 1. SALA, LOCAL DE PROVA E ALOCADOR DE SALAS (CAPACIDADE N+1, CARGO E FALLBACK)
-    // =========================================================================
-
-    @Test
+// 1. SALA, LOCAL DE PROVA E ALOCADOR DE SALAS (CAPACIDADE N+1, CARGO E FALLBACK)
+@Test
     @DisplayName("Deve bloquear o candidato N + 1 quando a Sala atingir capacidade maxima N")
     void deveLancarCapacidadeSalaExcedidaNoCandidatoNMaisUm() {
         CargoId cargoAnalista = CargoId.novo();
@@ -134,12 +130,8 @@ class RegrasDeAgregadoEdgeCasesTest {
         assertThatThrownBy(() -> sala.inscricoesAlocadas().add(InscricaoId.novo()))
             .isInstanceOf(UnsupportedOperationException.class);
     }
-
-    // =========================================================================
-    // 2. INSCRICAO E ISENCAO: FRONTEIRA DE 1 SEGUNDO NO PERIODO (INSTANT BOUNDARY)
-    // =========================================================================
-
-    @ParameterizedTest(name = "[{index}] {0}: instante={1} => deveRejeitar={2}")
+// 2. INSCRICAO E ISENCAO: FRONTEIRA DE 1 SEGUNDO NO PERIODO (INSTANT BOUNDARY)
+@ParameterizedTest(name = "[{index}] {0}: instante={1} => deveRejeitar={2}")
     @CsvSource({
         "'1 segundo antes da abertura',   2026-11-10T07:59:59Z, true",
         "'Exatamente no milissegundo 0',  2026-11-10T08:00:00Z, true",
@@ -210,12 +202,8 @@ class RegrasDeAgregadoEdgeCasesTest {
             .isInstanceOf(ConflitoDeEstadoException.class)
             .hasMessageContaining("homologado");
     }
-
-    // =========================================================================
-    // 3. VALUE OBJECTS ADVERSARIAIS (CPF REPETIDO, PESO ZERO/NEGATIVO, PERCENTUAL, PERIODO)
-    // =========================================================================
-
-    @ParameterizedTest(name = "CPF invalido rejeitado: {0}")
+// 3. VALUE OBJECTS ADVERSARIAIS (CPF REPETIDO, PESO ZERO/NEGATIVO, PERCENTUAL, PERIODO)
+@ParameterizedTest(name = "CPF invalido rejeitado: {0}")
     @ValueSource(strings = {
         "000.000.000-00",
         "111.111.111-11",

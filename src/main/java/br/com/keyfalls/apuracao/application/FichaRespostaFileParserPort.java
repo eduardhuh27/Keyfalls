@@ -11,9 +11,9 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * Etapa 6 — Porta de parsing resiliente em streaming para importacao em lote de fichas
+ * Porta de parsing resiliente em streaming para importacao em lote de fichas
  * de resposta opticas (CSV ou layout posicional da leitora optica), evitando estouro de
- * memoria (OutOfMemoryError) em certames nacionais com centenas de milhares de candidatos.
+ * memoria (OutOfMemoryError) em certames com grande volume de candidatos.
  */
 public interface FichaRespostaFileParserPort {
 
@@ -32,14 +32,14 @@ public interface FichaRespostaFileParserPort {
 
     record RelatorioParsingLote(
         long totalLinhasLidas,
-        long totalFichasValidas,
-        List<FalhaLinhaImportacao> falhasIsoladas
-    ) {}
+        long totalLinhasValidasProcessadas,
+        List<FalhaLinhaImportacao> falhasPorLinha
+    ) {
+        public boolean houveFalhas() {
+            return !falhasPorLinha.isEmpty();
+        }
+    }
 
-    /**
-     * Processa o InputStream linha a linha e entrega blocos de tamanho 'tamanhoChunk'
-     * ao consumidor de persistencia em batch, isolando linhas corrompidas no relatorio.
-     */
     RelatorioParsingLote processarEmChunks(
         InputStream streamArquivo,
         int tamanhoChunk,

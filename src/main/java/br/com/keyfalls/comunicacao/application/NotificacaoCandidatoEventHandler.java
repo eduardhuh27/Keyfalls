@@ -42,7 +42,7 @@ public final class NotificacaoCandidatoEventHandler {
     }
 
     /**
-     * Fluxo 1: Notificacao transacional do julgamento de isencao (deferida/indeferida + motivo).
+     * Notificacao transacional do julgamento de isencao.
      */
     public void tratarIsencaoJulgada(IsencaoJulgada evento) {
         Objects.requireNonNull(evento, "Evento IsencaoJulgada obrigatorio.");
@@ -69,7 +69,7 @@ public final class NotificacaoCandidatoEventHandler {
     }
 
     /**
-     * Fluxo 3a: Confirmacao de inscricao realizada.
+     * Confirmacao de inscricao realizada.
      */
     public void tratarInscricaoRealizada(InscricaoRealizada evento) {
         Objects.requireNonNull(evento, "Evento InscricaoRealizada obrigatorio.");
@@ -87,7 +87,7 @@ public final class NotificacaoCandidatoEventHandler {
     }
 
     /**
-     * Fluxo 3b: Convocacao e aviso de ensalamento (SalaAlocada).
+     * Convocacao e aviso de ensalamento.
      */
     public void tratarSalaAlocada(SalaAlocada evento) {
         Objects.requireNonNull(evento, "Evento SalaAlocada obrigatorio.");
@@ -107,7 +107,7 @@ public final class NotificacaoCandidatoEventHandler {
     }
 
     /**
-     * Fluxo 3c: Aviso de homologacao e publicacao do resultado final.
+     * Aviso de homologacao e publicacao do resultado final.
      */
     public void tratarResultadoFinalPublicado(ResultadoFinalPublicado evento) {
         Objects.requireNonNull(evento, "Evento ResultadoFinalPublicado obrigatorio.");

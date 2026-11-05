@@ -1,9 +1,7 @@
 package br.com.keyfalls.inscricao.infrastructure.gateway;
 
 import br.com.keyfalls.inscricao.application.EmissorBoletoBancarioPort;
-import br.com.keyfalls.inscricao.application.GatewayBoletoPort;
 import br.com.keyfalls.shared.domain.NumeroInscricao;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -12,12 +10,10 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Adapter deterministico de emissao de boleto bancario (padrao FEBRABAN 47 posicoes),
- * implementando GatewayBoletoPort e EmissorBoletoBancarioPort para GET /inscricoes/{id}/boleto.
+ * Adapter deterministico de emissao de boleto bancario (padrao FEBRABAN 47 posicoes).
  */
-@Primary
 @Component
-public class BoletoSimuladoAdapter implements GatewayBoletoPort, EmissorBoletoBancarioPort {
+public class BoletoSimuladoAdapter implements EmissorBoletoBancarioPort {
 
     private static final LocalDate DATA_BASE_FEBRABAN = LocalDate.of(1997, 10, 7);
 
@@ -35,20 +31,6 @@ public class BoletoSimuladoAdapter implements GatewayBoletoPort, EmissorBoletoBa
             dezDigitos,
             fatorVencimento % 10000,
             valorCentavos
-        );
-    }
-
-    @Override
-    public BoletoRegistradoDto registrarBoleto(DadosRegistroBoleto dados) {
-        String linhaDigitavel = registrarCobrancaBancaria(
-            dados.numeroInscricao(),
-            dados.valorNominal(),
-            dados.dataVencimento()
-        );
-        return new BoletoRegistradoDto(
-            "BB-" + dados.numeroInscricao().codigo(),
-            linhaDigitavel,
-            "https://boletos.keyfalls.com.br/" + dados.numeroInscricao().codigo() + ".pdf"
         );
     }
 }

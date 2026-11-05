@@ -97,12 +97,8 @@ class SegurancaEContratosApiTest {
 
     @MockBean
     private RecursoUseCases recursoUseCases;
-
-    // =========================================================================
-    // 1. PREVENCAO DE IDOR (Insecure Direct Object Reference)
-    // =========================================================================
-
-    @Test
+// 1. PREVENCAO DE IDOR (Insecure Direct Object Reference)
+@Test
     @DisplayName("Anti-IDOR: Candidato A autenticado tentando ler boleto do Candidato B recebe 403 Forbidden (ProblemDetail)")
     void deveBloquearIdorQuandoCandidatoATentarAcessarBoletoDoCandidatoB() throws Exception {
         UUID candidatoAId = UUID.randomUUID();
@@ -142,12 +138,8 @@ class SegurancaEContratosApiTest {
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.status").value(403));
     }
-
-    // =========================================================================
-    // 2. VIOLACOES DE RBAC (ROLE_CANDIDATO, ROLE_FISCAL, ANONIMO)
-    // =========================================================================
-
-    @Test
+// 2. VIOLACOES DE RBAC (ROLE_CANDIDATO, ROLE_FISCAL, ANONIMO)
+@Test
     @DisplayName("RBAC: Requisicao sem token Bearer JWT em endpoint protegido deve retornar 401 Unauthorized")
     void deveRetornar401QuandoSemTokenJwt() throws Exception {
         mockMvc.perform(get("/candidatos/me/desempenho").param("concursoId", UUID.randomUUID().toString()))
@@ -221,12 +213,8 @@ class SegurancaEContratosApiTest {
 
         verifyNoInteractions(recursoUseCases);
     }
-
-    // =========================================================================
-    // 3. CONTRATOS REST, BEAN VALIDATION (400), UPLOAD MALICIOSO E CONFLITO (409)
-    // =========================================================================
-
-    @Test
+// 3. CONTRATOS REST, BEAN VALIDATION (400), UPLOAD MALICIOSO E CONFLITO (409)
+@Test
     @DisplayName("Contrato 400 ProblemDetail: deve rejeitar payload invalido na abertura de recurso com mapa detalhado de violacoes")
     void deveRetornar400ProblemDetailQuandoPayloadDeRecursoForInvalido() throws Exception {
         mockMvc.perform(

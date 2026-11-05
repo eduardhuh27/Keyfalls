@@ -38,19 +38,7 @@ public final class ClassificadorDeCandidatos {
             .sorted(criterioMeritocratico)
             .toList();
 
-        List<ItemClassificacao> ranking = new ArrayList<>(aprovadosOrdenados.size());
-        for (int i = 0; i < aprovadosOrdenados.size(); i++) {
-            Resultado r = aprovadosOrdenados.get(i);
-            ranking.add(new ItemClassificacao(
-                i + 1,
-                r.inscricaoId(),
-                r.id(),
-                r.notaTotalPonderada(),
-                r.totalAcertos()
-            ));
-        }
-
-        return Collections.unmodifiableList(ranking);
+        return montarRanking(aprovadosOrdenados);
     }
 
     /**
@@ -65,14 +53,19 @@ public final class ClassificadorDeCandidatos {
         Comparator<CriterioDesempateChain.ResultadoCandidato> comparadorEdital =
             CriterioDesempateChain.construir(cadeiaDesempateEdital);
 
-        List<CriterioDesempateChain.ResultadoCandidato> aprovadosOrdenados = candidatosAvaliados.stream()
+        List<Resultado> aprovadosOrdenados = candidatosAvaliados.stream()
             .filter(rc -> rc.resultado().estaClassificado())
             .sorted(comparadorEdital)
+            .map(CriterioDesempateChain.ResultadoCandidato::resultado)
             .toList();
 
+        return montarRanking(aprovadosOrdenados);
+    }
+
+    private static List<ItemClassificacao> montarRanking(List<Resultado> aprovadosOrdenados) {
         List<ItemClassificacao> ranking = new ArrayList<>(aprovadosOrdenados.size());
         for (int i = 0; i < aprovadosOrdenados.size(); i++) {
-            Resultado r = aprovadosOrdenados.get(i).resultado();
+            Resultado r = aprovadosOrdenados.get(i);
             ranking.add(new ItemClassificacao(
                 i + 1,
                 r.inscricaoId(),

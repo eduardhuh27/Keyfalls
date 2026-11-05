@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Etapa 9 — Entidade JPA de Concurso equipada com @Version (Optimistic Locking)
+ * Entidade JPA de Concurso equipada com @Version (Optimistic Locking)
  * para impedir condicoes de corrida entre julgamentos tardios e a homologacao final.
  */
 @Entity

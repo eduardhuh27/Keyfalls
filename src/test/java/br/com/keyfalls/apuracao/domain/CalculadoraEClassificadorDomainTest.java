@@ -37,12 +37,8 @@ class CalculadoraEClassificadorDomainTest {
 
     private final CalculadoraDeNota calculadora = new CalculadoraDeNota();
     private final ClassificadorDeCandidatos classificador = new ClassificadorDeCandidatos();
-
-    // =========================================================================
-    // 1. DIZIMAS PERIODICAS E PRECISAO DECIMAL (ANTI-ARITHMETIC_EXCEPTION & ANTI-TRUNCAMENTO)
-    // =========================================================================
-
-    @ParameterizedTest(name = "[{index}] P1({0}/{1} peso {2}) + P2({3}/{4} peso {5}) => nota={6}, situacao={7}")
+// 1. DIZIMAS PERIODICAS E PRECISAO DECIMAL (ANTI-ARITHMETIC_EXCEPTION & ANTI-TRUNCAMENTO)
+@ParameterizedTest(name = "[{index}] P1({0}/{1} peso {2}) + P2({3}/{4} peso {5}) => nota={6}, situacao={7}")
     @CsvSource({
         // 7 questoes (dizima 4/7 = 57.142857...%) com peso 1.5 e 3 questoes (2/3 = 66.666666...%) com peso 2.3
         // Media exata = ((57.1428571429 * 1.5) + (66.6666666667 * 2.3)) / 3.8 = 239.0476190478 / 3.8 = 62.9072... -> 62.91
@@ -92,12 +88,8 @@ class CalculadoraEClassificadorDomainTest {
         assertThat(resultado.notaTotalPonderada()).isEqualByComparingTo(new BigDecimal(notaEsperada));
         assertThat(resultado.situacao()).isEqualTo(situacaoEsperada);
     }
-
-    // =========================================================================
-    // 2. FALSO APROVADO E FRONTEIRAS EXATAS DE CORTE (49.99% / 50.00% e 59.99% / 60.00%)
-    // =========================================================================
-
-    @ParameterizedTest(name = "[{index}] {0} => P1={1}%, P2={3}% => Total={5} ({6})")
+// 2. FALSO APROVADO E FRONTEIRAS EXATAS DE CORTE (49.99% / 50.00% e 59.99% / 60.00%)
+@ParameterizedTest(name = "[{index}] {0} => P1={1}%, P2={3}% => Total={5} ({6})")
     @CsvSource({
         // Falso aprovado classico: 49.90% em prova de peso minimo (1.0) e 92.02% em prova de peso 5.0 -> Media 85.00%, mas DESCLASSIFICADO!
         "'Falso Aprovado (85% global mas 49.9% individual)',     499,  1000, 1.00,  9202, 10000, 5.00, 85.00, DESCLASSIFICADO",
@@ -125,12 +117,8 @@ class CalculadoraEClassificadorDomainTest {
         assertThat(resultado.notaTotalPonderada()).as(cenario).isEqualByComparingTo(new BigDecimal(mediaEsperada));
         assertThat(resultado.situacao()).as(cenario).isEqualTo(situacaoEsperada);
     }
-
-    // =========================================================================
-    // 3. BUG CLASSICO DE ANULACAO: NAO DUPLICAR PONTO DE QUEM JA HAVIA ACERTADO!
-    // =========================================================================
-
-    @Test
+// 3. BUG CLASSICO DE ANULACAO: NAO DUPLICAR PONTO DE QUEM JA HAVIA ACERTADO!
+@Test
     @DisplayName("Anular questao que o candidato ja havia acertado no gabarito preliminar NAO pode duplicar o ponto dele")
     void naoDeveDuplicarPontoQuandoQuestaoJaAcertadaPeloCandidatoForAnulada() {
         ProvaId provaId = ProvaId.novo();
@@ -206,12 +194,8 @@ class CalculadoraEClassificadorDomainTest {
             .isInstanceOf(RegraDeNegocioException.class)
             .hasMessageContaining("impossivel redistribuir peso");
     }
-
-    // =========================================================================
-    // 4. EMPATE MULTIPLO EM CASCATA (ESTATUTO DO IDOSO -> PROVA MAIOR PESO -> IDADE EM DIAS)
-    // =========================================================================
-
-    @Test
+// 4. EMPATE MULTIPLO EM CASCATA (ESTATUTO DO IDOSO -> PROVA MAIOR PESO -> IDADE EM DIAS)
+@Test
     @DisplayName("Deve resolver empate multiplo na nota ponderada aplicando Estatuto do Idoso -> Especificas -> Data Nascimento exata")
     void deveDesempatarCascataCompletaComEstatutoDoIdosoEspecificasEIdadeEmDias() {
         ConcursoId concursoId = ConcursoId.novo();

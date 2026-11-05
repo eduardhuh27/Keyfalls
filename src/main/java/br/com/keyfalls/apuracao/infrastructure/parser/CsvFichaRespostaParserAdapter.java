@@ -9,7 +9,6 @@ import br.com.keyfalls.shared.domain.NumeroInscricao;
 import br.com.keyfalls.shared.domain.ProvaId;
 import br.com.keyfalls.shared.domain.QuestaoId;
 import br.com.keyfalls.shared.domain.RegraDeNegocioException;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -37,7 +36,6 @@ import java.util.function.Consumer;
  * - ' ' ou vazio (em branco) -> MarcacaoOpticaCapturada.emBranco() / Alternativa null (0 pontos)
  * - Linhas malformadas -> isoladas em FalhaLinhaImportacao sem abortar o chunk valido.
  */
-@Primary
 @Component
 public class CsvFichaRespostaParserAdapter implements FichaRespostaParserPort, FichaRespostaFileParserPort {
 

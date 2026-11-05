@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 /**
- * Etapa 5 (Fase 1 - MVP): Ordena locais priorizando estritamente:
+ * Ordena locais de prova priorizando:
  * 1) Mesmo bairro e mesma cidade;
  * 2) Mesma cidade e menor diferenca de prefixo de CEP;
  * 3) Mesma UF.
