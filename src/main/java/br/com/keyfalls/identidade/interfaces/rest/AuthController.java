@@ -2,9 +2,11 @@ package br.com.keyfalls.identidade.interfaces.rest;
 
 import br.com.keyfalls.identidade.application.AuthUseCases;
 import br.com.keyfalls.identidade.application.AuthUseCases.CandidatoRegistradoOutput;
+import br.com.keyfalls.identidade.application.AuthUseCases.EmitirTokenPerfilCommand;
 import br.com.keyfalls.identidade.application.AuthUseCases.LoginCommand;
 import br.com.keyfalls.identidade.application.AuthUseCases.RegistrarCandidatoCommand;
 import br.com.keyfalls.identidade.application.AuthUseCases.TokenAutenticacaoOutput;
+import br.com.keyfalls.shared.domain.security.PerfilAcesso;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -91,6 +93,15 @@ public class AuthController {
         }
     }
 
+    public record EmitirTokenRequest(
+        String email,
+        PerfilAcesso role
+    ) {
+        public EmitirTokenPerfilCommand toCommand() {
+            return new EmitirTokenPerfilCommand(email, role);
+        }
+    }
+
     public record TokenResponse(
         UUID usuarioId,
         String email,
@@ -117,6 +128,14 @@ public class AuthController {
     @Operation(summary = "Autentica candidato/operador e emite Bearer JWT com claim 'sub' e 'roles'")
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         var out = authUseCases.autenticar(request.toCommand());
+        return ResponseEntity.ok(TokenResponse.from(out));
+    }
+
+    @PostMapping("/auth/token")
+    @Operation(summary = "Emite token JWT diretamente por perfil (ROLE_ADMIN, ROLE_FISCAL, ROLE_CANDIDATO)")
+    public ResponseEntity<TokenResponse> emitirToken(@RequestBody(required = false) EmitirTokenRequest request) {
+        var cmd = request != null ? request.toCommand() : new EmitirTokenPerfilCommand(null, PerfilAcesso.ROLE_ADMIN);
+        var out = authUseCases.emitirTokenPorPerfil(cmd);
         return ResponseEntity.ok(TokenResponse.from(out));
     }
 }

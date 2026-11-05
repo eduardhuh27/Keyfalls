@@ -54,4 +54,11 @@ public interface AuthUseCases {
     CandidatoRegistradoOutput registrarCandidato(RegistrarCandidatoCommand command);
 
     TokenAutenticacaoOutput autenticar(LoginCommand command);
+
+    record EmitirTokenPerfilCommand(
+        String email,
+        PerfilAcesso perfil
+    ) {}
+
+    TokenAutenticacaoOutput emitirTokenPorPerfil(EmitirTokenPerfilCommand command);
 }

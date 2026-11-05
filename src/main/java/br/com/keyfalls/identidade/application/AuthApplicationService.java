@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Implementacao pura de aplicacao dos casos de uso de Identidade & Autenticacao JWT.
@@ -134,6 +135,18 @@ public class AuthApplicationService implements AuthUseCases {
             Set.of(PerfilAcesso.ROLE_CANDIDATO.authority()),
             token
         );
+    }
+
+    @Override
+    public TokenAutenticacaoOutput emitirTokenPorPerfil(EmitirTokenPerfilCommand command) {
+        Objects.requireNonNull(command, "EmitirTokenPerfilCommand obrigatorio.");
+        PerfilAcesso perfil = command.perfil() != null ? command.perfil() : PerfilAcesso.ROLE_ADMIN;
+        String email = (command.email() != null && !command.email().isBlank())
+            ? command.email().trim()
+            : "admin@keyfalls.com.br";
+        UUID id = UUID.randomUUID();
+        String token = emissorTokenJwtPort.emitirToken(id, email, Set.of(perfil));
+        return new TokenAutenticacaoOutput(id, email, Set.of(perfil.authority()), token);
     }
 
     private static void eventPublisherNoOpOrDrain(Candidato candidato) {

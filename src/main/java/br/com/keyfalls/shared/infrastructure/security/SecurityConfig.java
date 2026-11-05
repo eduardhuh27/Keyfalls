@@ -53,7 +53,7 @@ public class SecurityConfig {
                 ).permitAll()
 
                 // Endpoints Publicos de Consulta Oficial e Autenticacao
-                .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/registrar", "/candidatos").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/registrar", "/auth/token", "/candidatos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/concursos/*/classificados", "/provas/*/gabarito").permitAll()
 
                 // Contexto Concurso (ADMIN)

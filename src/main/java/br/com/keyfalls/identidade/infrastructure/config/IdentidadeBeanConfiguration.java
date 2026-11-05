@@ -55,6 +55,11 @@ public class IdentidadeBeanConfiguration {
             public TokenAutenticacaoOutput autenticar(LoginCommand command) {
                 return transactionOperations.execute(status -> delegate.autenticar(command));
             }
+
+            @Override
+            public TokenAutenticacaoOutput emitirTokenPorPerfil(EmitirTokenPerfilCommand command) {
+                return delegate.emitirTokenPorPerfil(command);
+            }
         };
     }
 }
