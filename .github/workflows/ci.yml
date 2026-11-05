@@ -1,0 +1,46 @@
+name: KeyFalls CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-architecture-and-tests:
+    name: Build, ArchUnit, Unit & Testcontainers Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Temurin JDK 21 with Maven cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Run Domain Unit Tests & ArchUnit Governance Gate
+        run: mvn test-compile surefire:test -Dtest="*Test" -B
+
+      - name: Run Full Verification with PostgreSQL Testcontainers
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "false"
+        run: mvn verify -B
+
+      - name: Validate Production Multi-Stage Docker Build
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+        run: docker build -t keyfalls-api:${{ github.sha }} .
+
+      - name: Publish JUnit Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-test-reports
+          path: target/surefire-reports/

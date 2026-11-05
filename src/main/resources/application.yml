@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: keyfalls-api
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/keyfalls}
+    username: ${DB_USERNAME:keyfalls}
+    password: ${DB_PASSWORD:keyfalls_secret}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: KeyFallsHikariPool
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      auto-commit: false
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    default-schema: shared
+    schemas:
+      - shared
+      - identidade
+      - concurso
+      - inscricao
+      - logistica
+      - apuracao
+      - recurso
+      - comunicacao
+    locations: classpath:db/migration
+
+  mail:
+    host: ${MAIL_HOST:smtp.keyfalls.com.br}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:notificacoes@keyfalls.com.br}
+    password: ${MAIL_PASSWORD:changeme}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+keyfalls:
+  security:
+    jwt:
+      issuer: ${JWT_ISSUER:https://api.keyfalls.com.br}
+      secret: ${JWT_HMAC_SECRET:chave-secreta-assinatura-hmac-sha256-minimo-32-bytes-keyfalls-prod}
+      access-token-expiration: ${JWT_EXPIRATION:PT2H}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

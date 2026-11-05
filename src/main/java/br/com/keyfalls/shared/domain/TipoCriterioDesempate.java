@@ -1,0 +1,10 @@
+package br.com.keyfalls.shared.domain;
+
+public enum TipoCriterioDesempate {
+    ESTATUTO_IDOSO_60_ANOS_OU_MAIS,
+    MAIOR_NOTA_CONHECIMENTOS_ESPECIFICOS,
+    MAIOR_NOTA_LINGUA_PORTUGUESA,
+    MAIOR_TOTAL_ACERTOS,
+    EXERCICIO_FUNCAO_JURADO,
+    MAIOR_IDADE_EM_DIAS
+}

@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: keyfalls-postgres
+    environment:
+      POSTGRES_DB: keyfalls
+      POSTGRES_USER: keyfalls
+      POSTGRES_PASSWORD: keyfalls_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - keyfalls_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keyfalls -d keyfalls"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: keyfalls-mailpit
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI de inspecao de e-mails
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  keyfalls-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: keyfalls-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/keyfalls
+      DB_USERNAME: keyfalls
+      DB_PASSWORD: keyfalls_secret
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      JWT_HMAC_SECRET: chave-secreta-local-desenvolvimento-hmac-sha256-minimo-32-bytes
+
+volumes:
+  keyfalls_pgdata:

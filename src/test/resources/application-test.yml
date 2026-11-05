@@ -1,0 +1,31 @@
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    clean-disabled: false
+
+  mail:
+    host: localhost
+    port: 3025
+    username: test@keyfalls.local
+    password: test-password
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+keyfalls:
+  security:
+    jwt:
+      issuer: https://test.keyfalls.local
+      secret: chave-secreta-exclusiva-para-testes-integrados-minimo-32-bytes-2026
+      access-token-expiration: PT30M
