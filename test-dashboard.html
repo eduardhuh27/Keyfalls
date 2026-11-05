@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -114,9 +114,14 @@
             <span class="text-slate-400 font-medium">JWT Token:</span>
             <span id="jwtStatus" class="font-mono text-slate-300 truncate text-[11px]">Nenhum token carregado</span>
           </div>
-          <button onclick="copiarToken()" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs transition ml-2">
+          <div class="flex items-center gap-1.5 ml-2">
+            <button onclick="executarAcaoDireta('tokenAdmin')" title="Alterna o token ativo para perfil ADMIN" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs transition flex items-center gap-1 shadow">
+              <span>ðŸ‘ Token Admin</span>
+            </button>
+            <button onclick="copiarToken()" class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs transition">
             Copiar JWT
           </button>
+          </div>
         </div>
       </div>
 
@@ -184,6 +189,24 @@
           </div>
         </div>
       </div>
+        <div class="bg-slate-800/90 border-2 border-amber-500/60 rounded-xl p-4 space-y-3 bg-gradient-to-r from-slate-800 via-amber-950/20 to-amber-900/30 shadow-lg">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-amber-300 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-amber-500/30 text-amber-300 inline-flex items-center justify-center text-xs font-bold border border-amber-500/50">1C</span>
+              ðŸ‘‘ Obter Token Administrador (ROLE_ADMIN)
+            </h3>
+            <span class="text-[11px] text-amber-400 font-mono font-semibold">POST /auth/token</span>
+          </div>
+          <p class="text-xs text-slate-200">Emite token JWT com perfil de <strong>ADMIN</strong>, liberando a criaÃ§Ã£o de concursos, provas, alocaÃ§Ã£o de salas e homologaÃ§Ã£o final.</p>
+          <div class="flex gap-2">
+            <button onclick="carregarPreset('tokenAdmin')" class="flex-1 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold transition shadow">
+              Preparar Token Admin
+            </button>
+            <button onclick="executarAcaoDireta('tokenAdmin')" class="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition shadow flex items-center gap-1">
+              âš¡ Obter Token Admin Agora
+            </button>
+          </div>
+        </div>
 
       <!-- STEP 2: CONCURSO -->
       <div id="stepPanel2" class="step-panel hidden space-y-4">
@@ -609,6 +632,14 @@
           cep: "01310100",
           latitude: -23.5649,
           longitude: -46.6520
+        }
+      }),
+      tokenAdmin: () => ({
+        method: 'POST',
+        url: '/auth/token',
+        body: {
+          email: "admin@keyfalls.com.br",
+          role: "ROLE_ADMIN"
         }
       }),
       loginCandidato: () => ({
