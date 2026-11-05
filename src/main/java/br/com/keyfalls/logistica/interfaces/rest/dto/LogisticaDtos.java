@@ -1,6 +1,7 @@
 package br.com.keyfalls.logistica.interfaces.rest.dto;
 
 import br.com.keyfalls.logistica.application.LogisticaUseCases;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -28,9 +29,11 @@ public final class LogisticaDtos {
         UUID cargoAtendidoId,
 
         @NotBlank(message = "O nome do fiscal responsavel e obrigatorio.")
+        @JsonAlias({"fiscalNome", "nomeFiscal"})
         String nomeFiscal,
 
         @NotBlank(message = "O CPF do fiscal e obrigatorio.")
+        @JsonAlias({"fiscalCpf", "cpfFiscal"})
         String cpfFiscal
     ) {}
 
@@ -58,14 +61,25 @@ public final class LogisticaDtos {
         @Valid
         List<SalaInputRequest> salas
     ) {
-        public LogisticaUseCases.CadastrarLocalDeProvaCommand toCommand(UUID concursoId) {
-            var salasCmd = salas.stream()
-                .map(s -> new LogisticaUseCases.SalaCadastroInput(
+        public LogisticaUseCases.CadastrarLocalComSalasCommand toCommand(UUID concursoId) {
+            var salasInput = salas.stream()
+                .map(s -> new LogisticaUseCases.SalaInput(
                     s.identificacao(), s.capacidadeMaxima(), s.cargoAtendidoId(), s.nomeFiscal(), s.cpfFiscal()
                 ))
                 .toList();
-            return new LogisticaUseCases.CadastrarLocalDeProvaCommand(
-                concursoId, nomeInstituicao, logradouro, numero, bairro, cidade, uf, cep, latitude, longitude, salasCmd
+
+            return new LogisticaUseCases.CadastrarLocalComSalasCommand(
+                concursoId,
+                nomeInstituicao,
+                logradouro,
+                numero,
+                bairro,
+                cidade,
+                uf,
+                cep,
+                latitude,
+                longitude,
+                salasInput
             );
         }
     }

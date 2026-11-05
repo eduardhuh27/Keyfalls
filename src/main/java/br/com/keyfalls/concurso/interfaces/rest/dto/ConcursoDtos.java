@@ -2,6 +2,7 @@ package br.com.keyfalls.concurso.interfaces.rest.dto;
 
 import br.com.keyfalls.concurso.application.ConcursoUseCases;
 import br.com.keyfalls.shared.domain.Alternativa;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -31,15 +32,19 @@ public final class ConcursoDtos {
         String abrangencia,
 
         @NotNull(message = "O inicio do periodo de inscricao e obrigatorio.")
+        @JsonAlias({"periodoInscricaoInicio", "inicioInscricao"})
         Instant inicioInscricao,
 
         @NotNull(message = "O fim do periodo de inscricao e obrigatorio.")
+        @JsonAlias({"periodoInscricaoFim", "fimInscricao"})
         Instant fimInscricao,
 
         @NotNull(message = "O inicio do periodo de isencao e obrigatorio.")
+        @JsonAlias({"periodoIsencaoInicio", "inicioIsencao"})
         Instant inicioIsencao,
 
         @NotNull(message = "O fim do periodo de isencao e obrigatorio.")
+        @JsonAlias({"periodoIsencaoFim", "fimIsencao"})
         Instant fimIsencao,
 
         @NotBlank(message = "A politica de anulacao de questoes e obrigatoria.")
@@ -75,6 +80,7 @@ public final class ConcursoDtos {
 
     public record AdicionarCargoRequest(
         @NotBlank(message = "O nome do cargo e obrigatorio.")
+        @JsonAlias({"nome", "nomeCargo"})
         String nomeCargo,
 
         @Positive(message = "A quantidade de vagas deve ser maior que zero.")

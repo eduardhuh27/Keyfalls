@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -657,10 +657,10 @@
           codigoEdital: "EDITAL-01/" + new Date().getFullYear(),
           titulo: "Concurso Publico Nacional Unificado 2026",
           abrangencia: "NACIONAL",
-          periodoInscricaoInicio: new Date().toISOString(),
-          periodoInscricaoFim: new Date(Date.now() + 86400000 * 30).toISOString(),
-          periodoIsencaoInicio: new Date().toISOString(),
-          periodoIsencaoFim: new Date(Date.now() + 86400000 * 10).toISOString(),
+          inicioInscricao: new Date().toISOString(),
+          fimInscricao: new Date(Date.now() + 86400000 * 30).toISOString(),
+          inicioIsencao: new Date().toISOString(),
+          fimIsencao: new Date(Date.now() + 86400000 * 10).toISOString(),
           politicaAnulacao: "PONTO_UNIVERSAL_STRATEGY"
         }
       }),
@@ -670,7 +670,7 @@
           method: 'POST',
           url: `/concursos/${cId}/cargos`,
           body: {
-            nome: "Auditor Fiscal de Controle",
+            nomeCargo: "Auditor Fiscal de Controle",
             vagas: 10,
             taxaInscricao: 120.00,
             provas: [
@@ -751,8 +751,8 @@
                 identificacao: "Sala 101 - Bloco A",
                 capacidadeMaxima: 35,
                 cargoAtendidoId: state.cargoId || '00000000-0000-0000-0000-000000000002',
-                fiscalNome: "Carlos Souza",
-                fiscalCpf: "11144477735"
+                nomeFiscal: "Carlos Souza",
+                cpfFiscal: "52998224725"
               }
             ]
           }
@@ -950,6 +950,8 @@
           }
           if (parsedData.concursoId) state.concursoId = parsedData.concursoId;
           if (parsedData.cargoId) state.cargoId = parsedData.cargoId;
+          if (parsedData.provasCriadasIds && parsedData.provasCriadasIds.length > 0) state.provaId = parsedData.provasCriadasIds[0];
+          if (parsedData.salasIds && parsedData.salasIds.length > 0) state.salaId = parsedData.salasIds[0];
           if (parsedData.provaId) state.provaId = parsedData.provaId;
           if (parsedData.inscricaoId) state.inscricaoId = parsedData.inscricaoId;
           atualizarInputsContexto();
